@@ -16,7 +16,7 @@
  * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
-class EcomCore_Freight_Block_Eparcel_Rate_Export extends Mage_Adminhtml_Block_System_Config_Form_Field
+class EcomCore_Freight_Block_Rate_Export extends Mage_Adminhtml_Block_System_Config_Form_Field
 {
     protected function _getElementHtml(Varien_Data_Form_Element_Abstract $element)
     {

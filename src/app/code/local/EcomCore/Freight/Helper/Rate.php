@@ -22,10 +22,26 @@
  * @category   EcomCore
  * @package    EcomCore_Freight
  */
-class EcomCore_Freight_Helper_Eparcel extends Mage_Core_Helper_Abstract
+class EcomCore_Freight_Helper_Rate extends Mage_Core_Helper_Abstract
 {
-    const XML_PATH_EMAIL_NOTIFICATION_ENABLED = 'doghouse_eparcelexport/email_notification/enabled';
-    const XML_PATH_EMAIL_NOTIFICATION_LEVEL = 'doghouse_eparcelexport/email_notification/level';
+
+    public $csvFieldMap = array(
+        'dest_country_id'      => 'Country',
+        'dest_region_id'       => 'State',
+        'dest_zip'             => 'Postcodes',
+        'weight_from'          => 'Weight from',
+        'weight_to'            => 'Weight to',
+        'price'                => 'Basic Price',
+        'price_per_kg'         => 'Price Per Kg',
+        'price_per_article'    => 'Price Per Article',
+        'consignment_allowed'  => 'Consignment Allowed',
+        'maxkg_per_consigment' => 'Max Kg Per Consignment',
+        'cap'                  => 'Capped price',
+        'surcharge'            => 'Surcharge',
+        'delivery_type'        => 'Delivery Type',
+        'charge_code'          => 'Charge Code',
+        'adjustment_rules'     => 'Adjustment Rules',
+    );
 
     /* AUSTRALIA POST CHARGE CODES */
     private $standardChargeCodes = array(

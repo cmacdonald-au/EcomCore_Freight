@@ -20,7 +20,7 @@
 <config>
     <modules>
         <EcomCore_Freight>
-            <version>3.1.5</version>
+            <version>0.0.3</version>
         </EcomCore_Freight>
     </modules>
     <global>
@@ -68,15 +68,6 @@
                 </connection>
             </eccfreight_read>
         </resources>
-        <sales>
-            <shipping>
-                <carriers>
-                    <eccfreightpost>
-                        <class>EcomCore_Freight_Model_Shipping_Carrier_Rate</class>
-                    </eccfreightpost>
-                </carriers>
-            </shipping>
-        </sales>
     </global>
     <frontend>
         <routers>
@@ -88,13 +79,6 @@
                 </args>
             </eccfreight>
         </routers>
-        <layout>
-            <updates>
-                <eccfreight module="EcomCore_Freight">
-                    <file>ecomcore/freight.xml</file>
-                </eccfreight>
-            </updates>
-        </layout>
     </frontend>
     <admin>
         <routers>
@@ -113,9 +97,9 @@
                 <active>0</active>
                 <sallowspecific>0</sallowspecific>
                 <condition_name>package_weight</condition_name>
-                <model>eccfreight/shipping_carrier_rate</model>
-                <name>eParcel</name>
-                <title>Australia Post eParcel</title>
+                <model>eccfreight/shipping_rate</model>
+                <name>eccfreight</name>
+                <title>Custom Freight</title>
                 <sallowspecific>1</sallowspecific>
                 <specificcountry>AU</specificcountry>
                 <specificerrmsg>This shipping method is currently unavailable. If you would like to ship using this shipping method, please contact us.</specificerrmsg>

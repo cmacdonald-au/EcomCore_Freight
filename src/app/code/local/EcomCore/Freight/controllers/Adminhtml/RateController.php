@@ -22,34 +22,8 @@
  * @category   EcomCore
  * @package    EcomCore_Freight
  */
-class EcomCore_Freight_Adminhtml_Australia_EparcelController extends Mage_Adminhtml_Controller_Action
+class EcomCore_Freight_Adminhtml_RateController extends Mage_Adminhtml_Controller_Action
 {
-    const ADMINHTML_SALES_ORDER_INDEX = 'adminhtml/sales_order/index';
-
-    /**
-     * Generate and export a CSV file for the given orders.
-     */
-    public function exportAction()
-    {
-        $request = $this->getRequest();
-        if (!$request->isPost()) {
-            $this->_redirect(self::ADMINHTML_SALES_ORDER_INDEX);
-        }
-
-        $orderIds = $this->getRequest()->getPost('order_ids', array());
-
-        try {
-            // Build the CSV and retrieve its path
-            $filePath = Mage::getModel('eccfreight/shipping_carrier_eparcel_export_csv')->exportOrders($orderIds);
-
-            // Download the file
-            $this->_prepareDownloadResponse(basename($filePath), file_get_contents($filePath));
-        } catch (Exception $e) {
-            Mage::getSingleton('core/session')->addError($e->getMessage());
-            $this->_redirect(self::ADMINHTML_SALES_ORDER_INDEX);
-        }
-    }
-
     /**
      * Export the eParcel table rates as a CSV file.
      */
@@ -59,35 +33,47 @@ class EcomCore_Freight_Adminhtml_Australia_EparcelController extends Mage_Adminh
         $response = array(
             array(
                 'Country',
-                'Region/State',
+                'State',
                 'Postcodes',
                 'Weight from',
                 'Weight to',
-                'Parcel Cost',
-                'Cost Per Kg',
+                'Basic Price',
+                'Price Per Kg',
+                'Price Per Article',
+                'Consignment Allowed',
+                'Max Kg Per Consignment',
+                'Capped price',
+                'Surcharge',
                 'Delivery Type',
                 'Charge Code Individual',
-                'Charge Code Business'
+                'Charge Code Business',
+                'Adjustment Rules'
             )
         );
 
         foreach ($rates as $rate) {
-            $countryId = $rate->getData('dest_country_id');
+            $countryId   = $rate->getData('dest_country_id');
             $countryCode = Mage::getModel('directory/country')->load($countryId)->getIso3Code();
-            $regionId = $rate->getData('dest_region_id');
-            $regionCode = Mage::getModel('directory/region')->load($regionId)->getCode();
+            $regionId    = $rate->getData('dest_region_id');
+            $regionCode  = Mage::getModel('directory/region')->load($regionId)->getCode();
 
             $response[] = array(
                 $countryCode,
                 $regionCode,
                 $rate->getData('dest_zip'),
-                $rate->getData('condition_from_value'),
-                $rate->getData('condition_to_value'),
+                $rate->getData('weight_from'),
+                $rate->getData('weight_to'),
                 $rate->getData('price'),
                 $rate->getData('price_per_kg'),
+                $rate->getData('price_per_article'),
+                $rate->getData('consignable'),
+                $rate->getData('consignment_allowed'),
+                $rate->getData('maxkg_per_consigment'),
+                $rate->getData('cap'),
+                $rate->getData('surcharge'),
                 $rate->getData('delivery_type'),
-                $rate->getData('charge_code_individual'),
-                $rate->getData('charge_code_business')
+                $rate->getData('charge_code')
+                $rate->getData('adjustment_rules'),
             );
         }
 
@@ -101,7 +87,7 @@ class EcomCore_Freight_Adminhtml_Australia_EparcelController extends Mage_Adminh
         rewind($temp);
 
         $contents = stream_get_contents($temp);
-        $this->_prepareDownloadResponse('tablerates.csv', $contents);
+        $this->_prepareDownloadResponse('eccfreightrates-'.date('Ymd.Hi', $_SERVER['REQUEST_TIME']).'.csv', $contents);
 
         fclose($temp);
     }

@@ -24,7 +24,6 @@
  */
 class EcomCore_Freight_Helper_Data extends Mage_Core_Helper_Abstract
 {
-    const XML_PATH_POSTCODE_AUTOCOMPLETE_ENABLED = 'ecomcore_freight/postcode_autocomplete/enabled';
 
     const MAX_QUERY_LEN = 100;
 
@@ -65,24 +64,6 @@ class EcomCore_Freight_Helper_Data extends Mage_Core_Helper_Abstract
     public function getQueryCountry()
     {
         return $this->_getRequest()->getParam('country');
-    }
-
-    /**
-     * @return string
-     */
-    public function getCitySuggestUrl()
-    {
-        return $this->_getUrl('eccfreight/ajax/suggest', array('_secure' => true));
-    }
-
-    /**
-     * Checks whether postcode autocomplete is enabled.
-     *
-     * @return bool
-     */
-    public function isPostcodeAutocompleteEnabled()
-    {
-        return Mage::getStoreConfigFlag(self::XML_PATH_POSTCODE_AUTOCOMPLETE_ENABLED);
     }
 
     /**

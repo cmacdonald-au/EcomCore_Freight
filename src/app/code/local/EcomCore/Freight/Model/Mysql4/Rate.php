@@ -20,10 +20,8 @@
  * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
-class EcomCore_Freight_Model_Mysql4_Shipping_Carrier_Eparcel extends Mage_Core_Model_Mysql4_Abstract
+class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
 {
-    const MIN_CSV_COLUMN_COUNT = 8;
-
     protected function _construct()
     {
         $this->_init('eccfreight/eparcel', 'pk');
@@ -169,9 +167,12 @@ class EcomCore_Freight_Model_Mysql4_Shipping_Carrier_Eparcel extends Mage_Core_M
 
     public function uploadAndImport(Varien_Object $object)
     {
-        $csvFile = $_FILES["groups"]["tmp_name"]["eparcel"]["fields"]["import"]["value"];
+        $csvFile = $_FILES["groups"]["tmp_name"]["rates"]["fields"]["import"]["value"];
 
         if (!empty($csvFile)) {
+
+            $helper = Mage::helper('eccfreight/rate');
+            $requiredColumnCount = count($helper->csvFieldMap);
 
             $csv = trim(file_get_contents($csvFile));
 
@@ -179,37 +180,34 @@ class EcomCore_Freight_Model_Mysql4_Shipping_Carrier_Eparcel extends Mage_Core_M
 
             $websiteId = $object->getScopeId();
 
-            if (isset($_POST['groups']['eparcel']['fields']['condition_name']['inherit'])) {
-                $conditionName = (string)Mage::getConfig()->getNode('default/carriers/eparcel/condition_name');
-            } else {
-                $conditionName = $_POST['groups']['eparcel']['fields']['condition_name']['value'];
-            }
-
-            $conditionFullName = Mage::getModel('eccfreight/shipping_carrier_eparcel')->getCode('condition_name_short', $conditionName);
-
             if (!empty($csv)) {
                 $exceptions = array();
                 $csvLines = explode("\n", $csv);
-                $csvLine = array_shift($csvLines);
-                $csvLine = $this->_getCsvValues($csvLine);
-                if (count($csvLine) < self::MIN_CSV_COLUMN_COUNT) {
-                    $exceptions[0] = Mage::helper('shipping')->__('Less than ' . self::MIN_CSV_COLUMN_COUNT . ' columns in the CSV header.');
+
+                $csvHeaders = $this->_getCsvValues(array_shift($csvLines));
+                if (count($csvHeaders) < $requiredColumnCount) {
+                    $exceptions[0] = Mage::helper('shipping')->__('Less than ' . $requiredColumnCount . ' columns in the CSV header.');
                 }
 
                 $countryCodes = array();
                 $regionCodes = array();
                 foreach ($csvLines as $k => $csvLine) {
-                    $csvLine = $this->_getCsvValues($csvLine);
+                    $csvLine = $this->_getCsvValues($csvLine, $csvHeaders);
                     $count = count($csvLine);
-                    if ($count > 0 && $count < self::MIN_CSV_COLUMN_COUNT) {
-                        $exceptions[0] = Mage::helper('shipping')->__('Less than ' . self::MIN_CSV_COLUMN_COUNT . ' columns in row ' . ($k + 1) . '.');
+                    if ($count > 0 && $count < $requiredColumnCount) {
+                        $exceptions[0] = Mage::helper('shipping')->__('Less than ' . $requiredColumnCount . ' columns in row ' . ($k + 1) . '.');
                     } else {
-                        $countryCodes[] = $csvLine[0];
-                        $regionCodes[] = $csvLine[1];
+                        $countryCodes[] = $csvLine['country'];
+                        $regionCodes[] = $csvLine['state'];
                     }
                 }
 
                 if (empty($exceptions)) {
+                    $csvMap = array();
+                    foreach ($helper->csvFieldMap as $dbKey => $csvHeader) {
+                        $csvMap[strtolower($csvHeader)] = $dbKey;
+                    }
+
                     $data = array();
                     $countryCodesToIds = array();
                     $regionCodesToIds = array();
@@ -232,93 +230,77 @@ class EcomCore_Freight_Model_Mysql4_Shipping_Carrier_Eparcel extends Mage_Core_M
                     }
 
                     foreach ($csvLines as $k=>$csvLine) {
-                        $csvLine = $this->_getCsvValues($csvLine);
+                        $csvLine = $this->_getCsvValues($csvLine, $csvHeaders);
 
-                        if (empty($countryCodesToIds) || !array_key_exists($csvLine[0], $countryCodesToIds)) {
+                        if (empty($countryCodesToIds) || !array_key_exists($csvLine['country'], $countryCodesToIds)) {
                             $countryId = '0';
-                            if ($csvLine[0] != '*' && $csvLine[0] != '') {
-                                $exceptions[] = Mage::helper('shipping')->__('Invalid country "%s" on row #%s', $csvLine[0], ($k+1));
+                            if ($csvLine['country'] != '*' && $csvLine['country'] != '') {
+                                $exceptions[] = Mage::helper('shipping')->__('Invalid country "%s" on row #%s', $csvLine['country'], ($k+1));
                             }
                         } else {
-                            $countryId = $countryCodesToIds[$csvLine[0]];
+                            $countryId = $countryCodesToIds[$csvLine['country']];
                         }
 
-                        if (empty($regionCodesToIds) || !array_key_exists($csvLine[1], $regionCodesToIds)) {
+                        if (empty($regionCodesToIds) || !array_key_exists($csvLine['state'], $regionCodesToIds)) {
                             $regionId = '0';
-                            if ($csvLine[1] != '*' && $csvLine[1] != '') {
-                                $exceptions[] = Mage::helper('shipping')->__('Invalid region/state "%s" on row #%s', $csvLine[1], ($k+1));
+                            if ($csvLine['state'] != '*' && $csvLine['state'] != '') {
+                                $exceptions[] = Mage::helper('shipping')->__('Invalid region/state "%s" on row #%s', $csvLine['state'], ($k+1));
                             }
                         } else {
-                            $regionId = $regionCodesToIds[$csvLine[1]];
+                            $regionId = $regionCodesToIds[$csvLine['state']];
                         }
 
-                        if ($csvLine[2] == '*' || $csvLine[2] == '') {
+                        if ($csvLine['postcodes'] == '*' || $csvLine['postcodes'] == '') {
                             $zip = '';
                         } else {
-                            $zip = $csvLine[2];
+                            $zip = $csvLine['postcodes'];
                         }
 
-                        if (!$this->_isPositiveDecimalNumber($csvLine[3]) || $csvLine[3] == '*' || $csvLine[3] == '') {
-                            $exceptions[] = Mage::helper('shipping')->__('Invalid %s "%s" on row #%s', $conditionFullName, $csvLine[3], ($k+1));
+                        if (!$this->_isPositiveDecimalNumber($csvLine['weight from']) || $csvLine['weight from'] == '*' || $csvLine['weight from'] == '') {
+                            $exceptions[] = Mage::helper('shipping')->__('Invalid value for weight from "%s" on row #%s', $csvLine['weight from'], ($k+1));
                         } else {
-                            $csvLine[3] = (float)$csvLine[3];
+                            $csvLine['weight from'] = (float)$csvLine['weight from'];
                         }
 
-                        if (!$this->_isPositiveDecimalNumber($csvLine[4]) || $csvLine[4] == '*' || $csvLine[4] == '') {
-                            $exceptions[] = Mage::helper('shipping')->__('Invalid %s "%s" on row #%s', $conditionFullName, $csvLine[4], ($k+1));
+                        if (!$this->_isPositiveDecimalNumber($csvLine['weight to']) || $csvLine['weight to'] == '*' || $csvLine['weight to'] == '') {
+                            $exceptions[] = Mage::helper('shipping')->__('Invalid value for weight to "%s" on row #%s', $csvLine['weight to'], ($k+1));
                         } else {
-                            $csvLine[4] = (float)$csvLine[4];
+                            $csvLine['weight to'] = (float)$csvLine['weight to'];
                         }
 
-                        if (!$this->_isPositiveDecimalNumber($csvLine[5])) {
-                            $exceptions[] = Mage::helper('shipping')->__('Invalid shipping price "%s" on row #%s', $csvLine[5], ($k+1));
+                        if (!$this->_isPositiveDecimalNumber($csvLine['basic price'])) {
+                            $exceptions[] = Mage::helper('shipping')->__('Invalid basic price "%s" on row #%s', $csvLine['basic price'], ($k+1));
                         } else {
-                            $csvLine[5] = (float)$csvLine[5];
+                            $csvLine['basic price'] = (float)$csvLine['basic price'];
                         }
 
-                        if (!$this->_isPositiveDecimalNumber($csvLine[6])) {
-                            $exceptions[] = Mage::helper('shipping')->__('Invalid shipping price per kg "%s" on row #%s', $csvLine[6], ($k+1));
+                        if (!$this->_isPositiveDecimalNumber($csvLine['price per kg'])) {
+                            $exceptions[] = Mage::helper('shipping')->__('Invalid kg price "%s" on row #%s', $csvLine['price per kg'], ($k+1));
                         } else {
-                            $csvLine[6] = (float)$csvLine[6];
+                            $csvLine['price per kg'] = (float)$csvLine['price per kg'];
                         }
 
-                        /** @var EcomCore_Freight_Helper_Eparcel $helper */
-                        $helper = Mage::helper('eccfreight/eparcel');
-
-                        if (isset($csvLine[8]) && $csvLine[8] != '' && !$helper->isValidChargeCode($csvLine[8])) {
-                            $exceptions[] = Mage::helper('shipping')->__('Invalid charge code "%s" on row #%s', $csvLine[8], ($k+1));
+                        if (!$this->_isPositiveDecimalNumber($csvLine['price per article'])) {
+                            $exceptions[] = Mage::helper('shipping')->__('Invalid article price "%s" on row #%s', $csvLine['price per article'], ($k+1));
                         } else {
-                            $csvLine[8] = isset($csvLine[8]) ? (string)$csvLine[8] : null;
+                            $csvLine['price per article'] = (float)$csvLine['price per article'];
                         }
 
-                        if (isset($csvLine[9]) && $csvLine[9] != '' && !$helper->isValidChargeCode($csvLine[9])) {
-                            $exceptions[] = Mage::helper('shipping')->__('Invalid charge code "%s" on row #%s', $csvLine[9], ($k+1));
-                        } else {
-                            $csvLine[9] = isset($csvLine[9]) ? (string)$csvLine[9] : null;
-                        }
+                        unset($csvLine['country']);
+                        unset($csvLine['state']);
+                        unset($csvLine['postcodes']);
 
-                        // If Multi Warehouse Ext is not used the value is 0 (as for no warehouse) otherwise is positive integer from table "warehouse"
-                        if (isset($csvLine[10]) && intval($csvLine[10]) < 0) {
-                            $exceptions[] = Mage::helper('shipping')->__('Invalid warehouse ID "%s" on row #%s', $csvLine[10], ($k+1));
-                        } else {
-                            $csvLine[10] = isset($csvLine[10]) ? (int)$csvLine[10] : 0;
-                        }
-
-                        $data[] = array(
+                        $dataset = array(
                             'website_id'             => $websiteId,
                             'dest_country_id'        => $countryId,
                             'dest_region_id'         => $regionId,
                             'dest_zip'               => $zip,
-                            'condition_name'         => $conditionName,
-                            'condition_from_value'   => $csvLine[3],
-                            'condition_to_value'     => $csvLine[4],
-                            'price'                  => $csvLine[5],
-                            'price_per_kg'           => $csvLine[6],
-                            'delivery_type'          => $csvLine[7],
-                            'charge_code_individual' => $csvLine[8],
-                            'charge_code_business'   => $csvLine[9],
-                            'stock_id'               => $csvLine[10],
                         );
+                        foreach ($csvLine as $k => $v) {
+                            $dataset[$csvMap[$k]] = $v;
+                        }
+
+                        $data[] = $dataset;
 
                         $dataDetails[] = array(
                             'country' => $csvLine[0],
@@ -332,7 +314,6 @@ class EcomCore_Freight_Model_Mysql4_Shipping_Carrier_Eparcel extends Mage_Core_M
 
                     $condition = array(
                         $connection->quoteInto('website_id = ?', $websiteId),
-                        $connection->quoteInto('condition_name = ?', $conditionName),
                     );
                     $connection->delete($table, $condition);
 
@@ -360,9 +341,9 @@ class EcomCore_Freight_Model_Mysql4_Shipping_Carrier_Eparcel extends Mage_Core_M
                                 }
                             }
 
-                            Mage::log(var_export($postcodes, true));
                             foreach($postcodes as $postcode) {
                                 $dataLine['dest_zip'] = str_pad($postcode, 4, "0", STR_PAD_LEFT);
+                                mage::log(__METHOD__.'() inserting '.json_encode($dataLine));
                                 $connection->insert($table, $dataLine);
                             }
                         } catch (Exception $e) {
@@ -400,9 +381,10 @@ class EcomCore_Freight_Model_Mysql4_Shipping_Carrier_Eparcel extends Mage_Core_M
      * @param string $separator
      * @return array
      */
-    protected function _getCsvValues($string, $separator=",")
+    protected function _getCsvValues($string, $headers=null)
     {
-        $elements = explode($separator, trim($string));
+        $separator = ',';
+        $elements = explode($separator, $string);
         for ($i = 0; $i < count($elements); $i++) {
             $nquotes = substr_count($elements[$i], '"');
             if ($nquotes %2 == 1) {
@@ -422,6 +404,11 @@ class EcomCore_Freight_Model_Mysql4_Shipping_Carrier_Eparcel extends Mage_Core_M
                 $qstr = str_replace('""', '"', $qstr);
             }
             $elements[$i] = trim($elements[$i]);
+        }
+
+        if (isset($headers) && is_array($headers) && count($headers) == count($elements)) {
+            $headers = array_map('strtolower', $headers);
+            $elements = array_combine($headers, $elements);
         }
         return $elements;
     }

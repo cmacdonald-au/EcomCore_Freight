@@ -21,10 +21,9 @@
     <modules>
         <EcomCore_Freight>
             <active>true</active>
-            <codePool>community</codePool>
+            <codePool>local</codePool>
             <depends>
                 <Mage_Shipping />
-                <Mage_Payment />
             </depends>
         </EcomCore_Freight>
     </modules>

@@ -20,7 +20,7 @@
 <config>
     <tabs>
         <ecomcore_extensions translate="label" module="eccfreight">
-            <label>EcomCore Extensions</label>
+            <label>EcomCore Freight</label>
             <sort_order>1000000</sort_order>
         </ecomcore_extensions>
     </tabs>
@@ -35,87 +35,6 @@
                     <show_in_website>1</show_in_website>
                     <show_in_store>1</show_in_store>
                     <fields>
-                        <handling_type translate="label">
-                            <label>Calculate Handling Fee</label>
-                            <frontend_type>select</frontend_type>
-                            <source_model>shipping/source_handlingType</source_model>
-                            <sort_order>7</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>0</show_in_store>
-                        </handling_type>
-                        <handling_fee translate="label">
-                            <label>Handling Fee</label>
-                            <frontend_type>text</frontend_type>
-                            <sort_order>8</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                        </handling_fee>
-                        <merchant_location_id translate="label">
-                            <label>Merchant Location ID</label>
-                            <frontend_type>text</frontend_type>
-                            <sort_order>9</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                            <comment>Provided by Australia Post. The unique ID specifying a specific merchant location.</comment>
-                        </merchant_location_id>
-                        <post_charge_account translate="label">
-                            <label>Post Charge To Account</label>
-                            <frontend_type>text</frontend_type>
-                            <sort_order>11</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                            <comment>Merchant account to which Australia Post "post" the charges against for invoicing purposes.</comment>
-                        </post_charge_account>
-                        <signature_required translate="label">
-                            <label>Signature Required</label>
-                            <frontend_type>select</frontend_type>
-                            <source_model>adminhtml/system_config_source_yesno</source_model>
-                            <sort_order>12</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                            <comment>If Yes, Australia Post will attempt to capture a signature and if no-one is in attendance the consignment will be "carded".</comment>
-                        </signature_required>
-                        <signature_cost translate="label">
-                            <label>Signature Cost</label>
-                            <frontend_type>text</frontend_type>
-                            <sort_order>13</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                            <comment>Additional amount to charge for requiring a signature.</comment>
-                        </signature_cost>
-                        <insurance_enable translate="label">
-                            <label>Enable Insurance</label>
-                            <frontend_type>select</frontend_type>
-                            <source_model>adminhtml/system_config_source_yesno</source_model>
-                            <sort_order>19</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                        </insurance_enable>
-                        <insurance_step translate="label">
-                            <label>Insurance Step</label>
-                            <frontend_type>text</frontend_type>
-                            <sort_order>20</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                            <comment>If insurance is $1.05 per $100, set this field to 100.0</comment>
-                        </insurance_step>
-                        <insurance_cost_per_step translate="label">
-                            <label>Insurance Cost Per Step</label>
-                            <frontend_type>text</frontend_type>
-                            <sort_order>21</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                            <comment>If insurance is $1.05 per $100, set this field to 1.05</comment>
-                        </insurance_cost_per_step>
                         <active translate="label">
                             <label>Enabled</label>
                             <frontend_type>select</frontend_type>
@@ -125,19 +44,10 @@
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
                         </active>
-                        <condition_name translate="label">
-                            <label>Condition</label>
-                            <frontend_type>select</frontend_type>
-                            <source_model>eccfreight/shipping_config_ratescondition</source_model>
-                            <sort_order>4</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>0</show_in_store>
-                        </condition_name>
                         <export translate="label">
                             <label>Export</label>
                             <frontend_type>button</frontend_type>
-                            <frontend_model>eccfreight/rates_rate_export</frontend_model>
+                            <frontend_model>eccfreight/rate_export</frontend_model>
                             <sort_order>5</sort_order>
                             <show_in_default>0</show_in_default>
                             <show_in_website>1</show_in_website>
@@ -146,7 +56,7 @@
                         <import translate="label">
                             <label>Import</label>
                             <frontend_type>import</frontend_type>
-                            <backend_model>eccfreight/shipping_config_rates</backend_model>
+                            <backend_model>eccfreight/shipping_config_rate</backend_model>
                             <sort_order>6</sort_order>
                             <show_in_default>0</show_in_default>
                             <show_in_website>1</show_in_website>

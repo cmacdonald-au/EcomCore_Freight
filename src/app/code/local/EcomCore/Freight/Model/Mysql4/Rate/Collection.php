@@ -24,7 +24,7 @@
  * @category   EcomCore
  * @package    EcomCore_Freight
  */
-class EcomCore_Freight_Model_Mysql4_Shipping_Carrier_Eparcel_Collection extends Varien_Data_Collection_Db
+class EcomCore_Freight_Model_Mysql4_Rate_Collection extends Varien_Data_Collection_Db
 {
     protected $_shipTable;
     protected $_countryTable;

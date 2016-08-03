@@ -27,14 +27,14 @@
  * @package    EcomCore_Freight
  */
 
-class EcomCore_Freight_Model_Shipping_Carrier_Eparcel
+class EcomCore_Freight_Model_Shipping_Rate
     extends Mage_Shipping_Model_Carrier_Abstract
     implements Mage_Shipping_Model_Carrier_Interface
 {
     /**
      * @var string
      */
-    protected $_code = 'eparcel';
+    protected $_code = 'eccfreight';
 
     /**
      * @var string

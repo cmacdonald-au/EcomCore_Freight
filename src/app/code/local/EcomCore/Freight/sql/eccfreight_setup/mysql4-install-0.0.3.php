@@ -19,6 +19,8 @@
 
 set_time_limit(0);
 
+Mage::log(__FILE__.' Running installer');
+
 $installer = $this;
 $installer->startSetup();
 
@@ -32,17 +34,22 @@ CREATE TABLE {$this->getTable('eccfreight_rates')} (
   `dest_country_id` varchar(4) NOT NULL default '0',
   `dest_region_id` int(10) NOT NULL default '0',
   `dest_zip` varchar(10) NOT NULL default '',
-  `condition_name` varchar(20) NOT NULL default '',
-  `condition_from_value` decimal(12,4) NOT NULL default '0.0000',
-  `condition_to_value` decimal(12,4) NOT NULL default '0.0000',
+  `price_from` decimal(12,4) DEFAULT NULL,
+  `price_to` decimal(12,4) DEFAULT NULL,
+  `weight_from` decimal(12,4) DEFAULT NULL,
+  `weight_to` decimal(12,4) DEFAULT NULL,
   `price` decimal(12,4) NOT NULL default '0.0000',
   `price_per_kg` decimal(12,4) NOT NULL default '0.0000',
-  `cost` decimal(12,4) NOT NULL default '0.0000',
+  `price_per_article` decimal(12,4) NOT NULL default '0.0000',
+  `consignment_allowed` tinyint NOT NULL default 1,
+  `maxkg_per_consigment` decimal(12,4) NOT NULL default '0.0000',
+  `cap` decimal(12,4) DEFAULT NULL,
+  `surcharge` decimal(12,4) DEFAULT NULL,
   `delivery_type` varchar(50) NOT NULL default '',
-  `charge_code_individual` varchar(50) NULL default NULL,
-  `charge_code_business` varchar(50) NULL default NULL,
+  `charge_code` varchar(50) default NULL,
+  `adjustment_rules` varchar(255) default NULL,
   PRIMARY KEY  (`pk`),
-  UNIQUE KEY `dest_country` ( `website_id` , `dest_country_id` , `dest_region_id` , `dest_zip` , `condition_name` , `condition_to_value` , `delivery_type`)
+  UNIQUE KEY `dest_country` ( `website_id` , `dest_country_id` , `dest_region_id` , `dest_zip` , `weight_from` , `weight_to`, `charge_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 ");
 
@@ -95,13 +102,18 @@ $postcodefile = dirname(__FILE__) . '/postcodes.csv';
 $success = false;
 
 try {
-    // Try using LOAD DATA which is extremely fast
+    // Try using LOAD DATA which is extremely fast - but is usually disabled
     $installer->run("LOAD DATA LOCAL INFILE '$postcodefile' INTO TABLE {$this->getTable('eccfreight_postcode')}
                     FIELDS TERMINATED BY ','
                     OPTIONALLY ENCLOSED BY '\''
                     LINES TERMINATED BY '\\n'");
 
-    $success = true;
+    $result = $db->fetchOne("SELECT count(postcode) FROM " . $this->getTable('eccfreight_postcode'));
+    if ($result > 0) {
+      $success = true;
+    } else {
+      Mage::log(__FILE__.'() Postcode load failed. Retrying using slower method.');
+    }
 } catch(Exception $e) {
     $success = false;
 }

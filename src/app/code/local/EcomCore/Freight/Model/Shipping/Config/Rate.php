@@ -16,11 +16,16 @@
  * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
-class EcomCore_Freight_Block_Directdeposit_Form extends Mage_Payment_Block_Form
+/**
+ * Backend model for Australia Post eParcel table rates CSV import
+ *
+ * @category   EcomCore
+ * @package    EcomCore_Freight
+ */
+class EcomCore_Freight_Model_Shipping_Config_Rate extends Mage_Core_Model_Config_Data
 {
-    protected function _construct()
+    public function _afterSave()
     {
-        parent::_construct();
-        $this->setTemplate('ecomcore/freight/payment/directdeposit/form.phtml');
+        Mage::getResourceModel('eccfreight/rate')->uploadAndImport($this);
     }
 }
