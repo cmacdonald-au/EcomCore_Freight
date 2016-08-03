@@ -72,7 +72,7 @@
             <shipping>
                 <carriers>
                     <eccfreightpost>
-                        <class>EcomCore_Freight_Model_Shipping_Carrier_Australiapost</class>
+                        <class>EcomCore_Freight_Model_Shipping_Carrier_Rate</class>
                     </eccfreightpost>
                 </carriers>
             </shipping>
@@ -109,20 +109,11 @@
     </admin>
     <default>
         <carriers>
-            <eccfreightpost>
-                <active>0</active>
-                <model>eccfreight/shipping_carrier_eccfreightpost</model>
-                <title>Australia Post</title>
-                <default_length>20</default_length>
-                <default_width>20</default_width>
-                <default_height>20</default_height>
-                <default_weight>20</default_weight>
-            </eccfreightpost>
-            <eparcel>
+            <eccfreight>
                 <active>0</active>
                 <sallowspecific>0</sallowspecific>
                 <condition_name>package_weight</condition_name>
-                <model>eccfreight/shipping_carrier_eparcel</model>
+                <model>eccfreight/shipping_carrier_rate</model>
                 <name>eParcel</name>
                 <title>Australia Post eParcel</title>
                 <sallowspecific>1</sallowspecific>
@@ -135,7 +126,7 @@
                 <signature_cost>6.44</signature_cost>
                 <insurance_step>100.0</insurance_step>
                 <insurance_cost_per_step>1.05</insurance_cost_per_step>
-            </eparcel>
+            </eccfreight>
         </carriers>
         <ecomcore_freight>
             <postcode_autocomplete>
