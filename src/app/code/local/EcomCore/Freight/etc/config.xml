@@ -76,47 +76,9 @@
                     </eccfreightpost>
                 </carriers>
             </shipping>
-            <tax>
-                <methods>
-                    <gst>
-                        <class>EcomCore_Freight_Model_Tax_Gst</class>
-                    </gst>
-                </methods>
-            </tax>
-            <order>
-                <statuses>
-                    <pending_bpay translate="label">
-                        <label>Pending BPAY</label>
-                    </pending_bpay>
-                    <pending_deposit translate="label">
-                        <label>Pending Direct Deposit</label>
-                    </pending_deposit>
-                </statuses>
-                <states>
-                    <new>
-                        <statuses>
-                            <pending_bpay/>
-                            <pending_deposit/>
-                        </statuses>
-                    </new>
-                </states>
-            </order>
         </sales>
-        <events>
-            <checkout_type_onepage_save_order>
-                <observers>
-                    <ecomcore_freight_payment_place>
-                        <class>eccfreight/observer</class>
-                        <method>addHistory</method>
-                    </ecomcore_freight_payment_place>
-                </observers>
-            </checkout_type_onepage_save_order>
-        </events>
     </global>
     <frontend>
-        <secure_url>
-            <eccfreight_address>/eccfreight/address</eccfreight_address>
-        </secure_url>
         <routers>
             <eccfreight>
                 <use>standard</use>
@@ -126,17 +88,6 @@
                 </args>
             </eccfreight>
         </routers>
-        <events>
-            <controller_action_layout_render_before_checkout_onepage_index>
-                <observers>
-                    <ecomcore_freight_load_magento_css>
-                        <type>singleton</type>
-                        <class>EcomCore_Freight_Model_Observer</class>
-                        <method>addMagentoCss</method>
-                    </ecomcore_freight_load_magento_css>
-                </observers>
-            </controller_action_layout_render_before_checkout_onepage_index>
-        </events>
         <layout>
             <updates>
                 <eccfreight module="EcomCore_Freight">
@@ -156,24 +107,6 @@
             </adminhtml>
         </routers>
     </admin>
-    <adminhtml>
-        <events>
-            <adminhtml_block_html_before>
-                <observers>
-                    <ecomcore_freight_shipment_clickandsend_export_bulkaction>
-                        <type>singleton</type>
-                        <class>eccfreight/shipping_carrier_clickandsend</class>
-                        <method>addExportToBulkAction</method>
-                    </ecomcore_freight_shipment_clickandsend_export_bulkaction>
-                    <ecomcore_freight_shipment_eparcel_export_bulkaction>
-                        <type>singleton</type>
-                        <class>eccfreight/shipping_carrier_eparcel</class>
-                        <method>addExportToBulkAction</method>
-                    </ecomcore_freight_shipment_eparcel_export_bulkaction>
-                </observers>
-            </adminhtml_block_html_before>
-        </events>
-    </adminhtml>
     <default>
         <carriers>
             <eccfreightpost>
@@ -204,46 +137,10 @@
                 <insurance_cost_per_step>1.05</insurance_cost_per_step>
             </eparcel>
         </carriers>
-        <payment>
-            <bpay>
-                <active>0</active>
-                <model>eccfreight/payment_bpay</model>
-                <order_status>pending_bpay</order_status>
-                <customer_group_access>0</customer_group_access>
-                <customer_group>0</customer_group>
-                <title>BPAY</title>
-                <allowspecific>0</allowspecific>
-                <calculate_using_customerid>0</calculate_using_customerid>
-                <accept_credit_cards>1</accept_credit_cards>
-                <use_mod_10_v_5>0</use_mod_10_v_5>
-                <message>Payment details will be displayed on order confirmation screen.</message>
-            </bpay>
-            <directdeposit_au>
-                <active>0</active>
-                <model>eccfreight/payment_directdeposit</model>
-                <order_status>pending_deposit</order_status>
-                <customer_group_access>0</customer_group_access>
-                <customer_group>0</customer_group>
-                <title>Direct Deposit</title>
-                <account_name></account_name>
-                <account_bsb>000000</account_bsb>
-                <account_number>00000000</account_number>
-                <allowspecific>0</allowspecific>
-                <message>Please quote order number (displayed after checkout confirmation) when making your deposit. Order will be processed once payment has been received.</message>
-            </directdeposit_au>
-        </payment>
         <ecomcore_freight>
             <postcode_autocomplete>
                 <max_results>20</max_results>
             </postcode_autocomplete>
-            <clickandsend>
-                <active>0</active>
-                <nondelivery_instructions>5</nondelivery_instructions>
-                <from_country>AU</from_country>
-            </clickandsend>
-            <address_validation>
-                <delivery_choices_account_password backend_model="adminhtml/system_config_backend_encrypted" />
-            </address_validation>
         </ecomcore_freight>
     </default>
 </config>

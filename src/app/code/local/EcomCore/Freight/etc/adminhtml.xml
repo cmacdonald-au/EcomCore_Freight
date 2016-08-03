@@ -27,11 +27,8 @@
                             <config>
                                 <children>
                                     <ecomcore_freight>
-                                        <title>Australia Section</title>
+                                        <title>Custom Freight</title>
                                     </ecomcore_freight>
-                                    <doghouse_eparcelexport>
-                                        <title>eParcel Export Section</title>
-                                    </doghouse_eparcelexport>
                                 </children>
                             </config>
                         </children>
