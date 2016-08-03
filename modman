@@ -7,5 +7,4 @@ src/app/etc/modules/EcomCore_Freight.xml                           app/etc/modul
 src/app/design/adminhtml/default/default/template/ecomcore/freight app/design/adminhtml/default/default/template/ecomcore/freight
 src/app/design/frontend/base/default/layout/ecomcore/freight.xml   app/design/frontend/base/default/layout/ecomcore/freight.xml
 src/app/design/frontend/base/default/template/ecomcore/freight     app/design/frontend/base/default/template/ecomcore/freight
-src/lib/Doghouse/Australia                                         lib/Doghouse/Australia
 src/skin/frontend/base/default/ecomcore/freight                    skin/frontend/base/default/ecomcore/freight
