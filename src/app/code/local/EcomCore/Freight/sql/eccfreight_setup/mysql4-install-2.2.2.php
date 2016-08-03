@@ -25,8 +25,8 @@ $installer->startSetup();
 // Create a database table for eParcel table rates.
 // This table uses the same structure as the normal table rate table.
 $installer->run("
-DROP TABLE IF EXISTS {$this->getTable('eccfreight_eparcel')};
-CREATE TABLE {$this->getTable('eccfreight_eparcel')} (
+DROP TABLE IF EXISTS {$this->getTable('eccfreight_rates')};
+CREATE TABLE {$this->getTable('eccfreight_rates')} (
   `pk` int(10) unsigned NOT NULL auto_increment,
   `website_id` int(11) NOT NULL default '0',
   `dest_country_id` varchar(4) NOT NULL default '0',

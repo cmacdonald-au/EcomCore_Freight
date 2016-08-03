@@ -33,7 +33,7 @@
                 <class>EcomCore_Freight_Model_Mysql4</class>
                 <entities>
                     <eparcel>
-                        <table>eccfreight_eparcel</table>
+                        <table>eccfreight_rates</table>
                     </eparcel>
                 </entities>
             </eccfreight_mysql4>

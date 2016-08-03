@@ -264,7 +264,7 @@ class EcomCore_Freight_Model_Shipping_Carrier_Eparcel
 
         $observer->block->getMassactionBlock()->addItem('eparcelexport', array(
             'label' => $observer->block->__('Export to CSV (eParcel)'),
-            'url' => $observer->block->getUrl('*/eccfreight_eparcel/export')
+            'url' => $observer->block->getUrl('*/eccfreight_rates/export')
         ));
     }
 }

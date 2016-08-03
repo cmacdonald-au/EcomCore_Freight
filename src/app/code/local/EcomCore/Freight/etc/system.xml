@@ -27,169 +27,8 @@
     <sections>
         <carriers>
             <groups>
-                <eccfreightpost translate="label" module="eccfreight">
-                    <label>Australia Post</label>
-                    <frontend_type>text</frontend_type>
-                    <sort_order>1000</sort_order>
-                    <show_in_default>1</show_in_default>
-                    <show_in_website>1</show_in_website>
-                    <show_in_store>1</show_in_store>
-                    <fields>
-                        <active translate="label">
-                            <label>Enabled</label>
-                            <frontend_type>select</frontend_type>
-                            <source_model>adminhtml/system_config_source_yesno</source_model>
-                            <sort_order>10</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                        </active>
-                        <developer_mode translate="label comment">
-                            <label>Developer Mode</label>
-                            <frontend_type>select</frontend_type>
-                            <source_model>adminhtml/system_config_source_yesno</source_model>
-                            <sort_order>20</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                            <comment>Use the Australia Post test environment to get shipping rates. Not recommended for production use.</comment>
-                        </developer_mode>
-                        <api_key translate="label">
-                            <label>API Key</label>
-                            <frontend_type>obscure</frontend_type>
-                            <backend_model>adminhtml/system_config_backend_encrypted</backend_model>
-                            <sort_order>30</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                            <comment>Register for an API key at: http://auspost.com.au/devcentre/registration.html</comment>
-                        </api_key>
-                        <allowed_methods translate="label">
-                            <label>Allowed Methods</label>
-                            <frontend_type>multiselect</frontend_type>
-                            <source_model>eccfreight/shipping_carrier_eccfreightpost_source_method</source_model>
-                            <sort_order>40</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                        </allowed_methods>
-                        <signature_on_delivery>
-                            <label>Signature on Delivery</label>
-                            <frontend_type>select</frontend_type>
-                            <source_model>eccfreight/shipping_carrier_eccfreightpost_source_visibility</source_model>
-                            <sort_order>50</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                            <comment>Controls whether shipping methods with the Signature on Delivery option are shown. If set to 'Required', only shipping methods with this option will be shown. If set to 'Never', shipping methods with this option will not be shown. If set to 'Optional', shipping methods both with and without this option will be shown, allowing the customer to choose.</comment>
-                        </signature_on_delivery>
-                        <extra_cover>
-                            <label>Extra Cover</label>
-                            <frontend_type>select</frontend_type>
-                            <source_model>eccfreight/shipping_carrier_eccfreightpost_source_visibility</source_model>
-                            <sort_order>60</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                            <comment>Controls whether shipping methods with the Extra Cover option are shown (see above).</comment>
-                        </extra_cover>
-                        <pick_up>
-                            <label>Pick Up (Metro Only)</label>
-                            <frontend_type>select</frontend_type>
-                            <source_model>eccfreight/shipping_carrier_eccfreightpost_source_visibility</source_model>
-                            <sort_order>70</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                            <comment>Controls whether shipping methods with the Pick Up option are shown (see above).</comment>
-                        </pick_up>
-                        <sallowspecific label="label">
-                            <label>Ship to Applicable Countries</label>
-                            <frontend_type>select</frontend_type>
-                            <sort_order>80</sort_order>
-                            <frontend_class>shipping-applicable-country</frontend_class>
-                            <source_model>adminhtml/system_config_source_shipping_allspecificcountries</source_model>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>0</show_in_store>
-                        </sallowspecific>
-                        <specificcountry translate="label">
-                            <label>Ship to Specific Countries</label>
-                            <frontend_type>multiselect</frontend_type>
-                            <sort_order>90</sort_order>
-                            <source_model>adminhtml/system_config_source_country</source_model>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>0</show_in_store>
-                            <can_be_empty>1</can_be_empty>
-                        </specificcountry>
-                        <length_attribute>
-                            <label>Length Attribute</label>
-                            <frontend_type>text</frontend_type>
-                            <sort_order>100</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                            <comment>
-                                Product attribute code used for length. This will be used to calculate shipping
-                                rates for orders with only one product. For orders with more than one product (or
-                                if this field is not set) then Default Parcel Length will be used for calculating prices.
-                            </comment>
-                        </length_attribute>
-                        <default_length>
-                            <label>Default Parcel Length (cm)</label>
-                            <frontend_type>text</frontend_type>
-                            <sort_order>110</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                        </default_length>
-                        <width_attribute>
-                            <label>Width Attribute</label>
-                            <frontend_type>text</frontend_type>
-                            <sort_order>120</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                            <comment>Product attribute code used for width (see above).</comment>
-                        </width_attribute>
-                        <default_width>
-                            <label>Default Parcel Width (cm)</label>
-                            <frontend_type>text</frontend_type>
-                            <sort_order>130</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                        </default_width>
-                        <height_attribute>
-                            <label>Height Attribute</label>
-                            <frontend_type>text</frontend_type>
-                            <sort_order>140</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                            <comment>Product attribute code used for height (see above).</comment>
-                        </height_attribute>
-                        <default_height>
-                            <label>Default Parcel Height (cm)</label>
-                            <frontend_type>text</frontend_type>
-                            <sort_order>150</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                        </default_height>
-                        <default_weight>
-                            <label>Default Parcel Weight (kg)</label>
-                            <frontend_type>text</frontend_type>
-                            <sort_order>160</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                        </default_weight>
-                    </fields>
-                </eccfreightpost>
-                <eparcel translate="label">
-                    <label>Australia Post eParcel</label>
+                <rates translate="label">
+                    <label>Custom Rates</label>
                     <frontend_type>text</frontend_type>
                     <sort_order>1001</sort_order>
                     <show_in_default>1</show_in_default>
@@ -289,7 +128,7 @@
                         <condition_name translate="label">
                             <label>Condition</label>
                             <frontend_type>select</frontend_type>
-                            <source_model>eccfreight/shipping_config_eparcelcondition</source_model>
+                            <source_model>eccfreight/shipping_config_ratescondition</source_model>
                             <sort_order>4</sort_order>
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
@@ -298,7 +137,7 @@
                         <export translate="label">
                             <label>Export</label>
                             <frontend_type>button</frontend_type>
-                            <frontend_model>eccfreight/eparcel_rate_export</frontend_model>
+                            <frontend_model>eccfreight/rates_rate_export</frontend_model>
                             <sort_order>5</sort_order>
                             <show_in_default>0</show_in_default>
                             <show_in_website>1</show_in_website>
@@ -307,7 +146,7 @@
                         <import translate="label">
                             <label>Import</label>
                             <frontend_type>import</frontend_type>
-                            <backend_model>eccfreight/shipping_config_eparcel</backend_model>
+                            <backend_model>eccfreight/shipping_config_rates</backend_model>
                             <sort_order>6</sort_order>
                             <show_in_default>0</show_in_default>
                             <show_in_website>1</show_in_website>
@@ -374,7 +213,7 @@
                             <show_in_store>1</show_in_store>
                         </specificerrmsg>
                     </fields>
-                </eparcel>
+                </rates>
             </groups>
         </carriers>
     </sections>

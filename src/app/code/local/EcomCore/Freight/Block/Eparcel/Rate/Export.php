@@ -21,7 +21,7 @@ class EcomCore_Freight_Block_Eparcel_Rate_Export extends Mage_Adminhtml_Block_Sy
     protected function _getElementHtml(Varien_Data_Form_Element_Abstract $element)
     {
         $this->setElement($element);
-        $url = $this->getUrl('*/eccfreight_eparcel/exportTablerates');
+        $url = $this->getUrl('*/eccfreight_rates/exportTablerates');
 
         $html = $this->getLayout()->createBlock('adminhtml/widget_button')
             ->setType('button')
