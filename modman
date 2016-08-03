@@ -1,0 +1,11 @@
+# modman module description
+# see https://github.com/colinmollenhour/modman/ for more info
+
+# EcomCore Freight
+src/app/code/local/EcomCore/Freight                            app/code/local/EcomCore/Freight
+src/app/etc/modules/EcomCore_Freight.xml                           app/etc/modules/EcomCore_Freight.xml
+src/app/design/adminhtml/default/default/template/ecomcore/freight app/design/adminhtml/default/default/template/ecomcore/freight
+src/app/design/frontend/base/default/layout/ecomcore/freight.xml   app/design/frontend/base/default/layout/ecomcore/freight.xml
+src/app/design/frontend/base/default/template/ecomcore/freight     app/design/frontend/base/default/template/ecomcore/freight
+src/lib/Doghouse/Australia                                         lib/Doghouse/Australia
+src/skin/frontend/base/default/ecomcore/freight                    skin/frontend/base/default/ecomcore/freight

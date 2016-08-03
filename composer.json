@@ -1,0 +1,12 @@
+{
+    "name":"ecomcore/freight",
+    "type":"magento-module",
+    "license":"OSL-3.0",
+    "description":"Provides essential functionality for Australian stores",
+    "homepage":"https://www.ecomcore.com.au/australia-magento-extension",
+    "require": {
+        "magento-hackathon/magento-composer-installer": "*",
+        "ecomcore/auspost-api-php": "1.x",
+        "ecomcore/composer-autoloader" : "*"
+    }
+}

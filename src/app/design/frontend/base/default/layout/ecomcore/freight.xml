@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * EcomCore Freight Extension
+ *
+ * NOTICE OF LICENSE
+ *
+ * This source file is subject to the Open Software License (OSL 3.0)
+ * that is bundled with this package in the file LICENSE.txt.
+ * It is also available through the world-wide-web at this URL:
+ * http://opensource.org/licenses/osl-3.0.php
+ *
+ * @category   EcomCore
+ * @package    EcomCore_Freight
+ * @author     Chris Norton
+ * @copyright  Copyright (c) 2014 EcomCore Pty. Ltd. (http://www.ecomcore.com.au)
+ * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ */
+-->
+<layout version="0.1.0">
+    <customer_address_form>
+        <reference name="head">
+            <action method="addCss" ifconfig="ecomcore_freight/postcode_autocomplete/enabled"><stylesheet>ecomcore/freight/css/postcode-autocomplete.css</stylesheet></action>
+        </reference>
+        <reference name="my.account.wrapper">
+            <block type="core/template" name="ecomcore_freight_autocomplete" template="ecomcore/freight/postcode.phtml"/>
+        </reference>
+    </customer_address_form>
+    <customer_account_create>
+        <reference name="head">
+            <action method="addCss" ifconfig="ecomcore_freight/postcode_autocomplete/enabled"><stylesheet>ecomcore/freight/css/postcode-autocomplete.css</stylesheet></action>
+        </reference>
+        <reference name="footer">
+            <block type="core/template" name="ecomcore_freight_autocomplete" template="ecomcore/freight/postcode.phtml"/>
+        </reference>
+    </customer_account_create>
+    <checkout_onepage_index>
+        <reference name="head">
+            <action method="addCss" ifconfig="ecomcore_freight/postcode_autocomplete/enabled"><stylesheet>ecomcore/freight/css/postcode-autocomplete.css</stylesheet></action>
+            <action method="addJs" ifconfig="ecomcore_freight/address_validation/enabled"><script>prototype/window.js</script></action>
+            <action method="addCss" ifconfig="ecomcore_freight/address_validation/enabled"><stylesheet>ecomcore/freight/css/opcheckout.css</stylesheet></action>
+        </reference>
+        <reference name="content">
+            <block type="core/template" name="ecomcore.eccfreight.checkout.onepage" template="ecomcore/freight/checkout/onepage.phtml">
+                <block type="core/template" name="ecomcore.eccfreight.address.suggestion" template="ecomcore/freight/checkout/address/suggestion.phtml"/>
+                <block type="core/template" name="ecomcore.eccfreight.address.failure" template="ecomcore/freight/checkout/address/failure.phtml"/>
+            </block>
+            <block type="core/template" name="ecomcore_freight_autocomplete" template="ecomcore/freight/postcode-checkout.phtml"/>
+        </reference>
+    </checkout_onepage_index>
+    <checkout_onepage_success>
+        <reference name="checkout.success">
+            <block type="checkout/onepage_success" name="ecomcore.eccfreight.bpay.success" template="ecomcore/freight/payment/bpay/success.phtml">
+                <block type="core/template" name="ecomcore.eccfreight.bpay.details" template="ecomcore/freight/payment/bpay/details.phtml"/>
+            </block>
+            <block type="checkout/onepage_success" name="ecomcore.eccfreight.directdeposit.success" template="ecomcore/freight/payment/directdeposit/success.phtml"/>
+        </reference>
+    </checkout_onepage_success>
+</layout>
