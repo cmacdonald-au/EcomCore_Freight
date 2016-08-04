@@ -22,7 +22,7 @@
  * @category   EcomCore
  * @package    EcomCore_Freight
  */
-class EcomCore_Freight_Model_Shipping_Config_Rate extends Mage_Core_Model_Config_Data
+class EcomCore_Freight_Model_Config_Rate extends Mage_Core_Model_Config_Data
 {
     public function _afterSave()
     {
