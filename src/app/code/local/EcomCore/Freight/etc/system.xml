@@ -27,7 +27,7 @@
     <sections>
         <carriers>
             <groups>
-                <rates translate="label">
+                <eccfreight translate="label">
                     <label>Custom Rates</label>
                     <frontend_type>text</frontend_type>
                     <sort_order>1001</sort_order>
@@ -123,7 +123,7 @@
                             <show_in_store>1</show_in_store>
                         </specificerrmsg>
                     </fields>
-                </rates>
+                </eccfreight>
             </groups>
         </carriers>
     </sections>

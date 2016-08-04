@@ -22,14 +22,15 @@
  * @category   EcomCore
  * @package    EcomCore_Freight
  */
-class EcomCore_Freight_Adminhtml_RateController extends Mage_Adminhtml_Controller_Action
+class EcomCore_Freight_Adminhtml_EccfreightController extends Mage_Adminhtml_Controller_Action
 {
     /**
      * Export the eParcel table rates as a CSV file.
      */
     public function exportTableratesAction()
     {
-        $rates = Mage::getResourceModel('eccfreight/shipping_carrier_eparcel_collection');
+        Mage::log(__METHOD__.'() Doing things');
+        $rates = Mage::getResourceModel('eccfreight/rate_collection');
         $response = array(
             array(
                 'Country',
@@ -72,7 +73,7 @@ class EcomCore_Freight_Adminhtml_RateController extends Mage_Adminhtml_Controlle
                 $rate->getData('cap'),
                 $rate->getData('surcharge'),
                 $rate->getData('delivery_type'),
-                $rate->getData('charge_code')
+                $rate->getData('charge_code'),
                 $rate->getData('adjustment_rules'),
             );
         }

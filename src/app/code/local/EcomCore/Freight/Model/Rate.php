@@ -21,13 +21,13 @@
  */
 
 /**
- * Australia Post eParcel shipping model
+ * Custom Freight model
  *
  * @category   EcomCore
  * @package    EcomCore_Freight
  */
 
-class EcomCore_Freight_Model_Shipping_Rate
+class EcomCore_Freight_Model_Rate
     extends Mage_Shipping_Model_Carrier_Abstract
     implements Mage_Shipping_Model_Carrier_Interface
 {
@@ -45,6 +45,7 @@ class EcomCore_Freight_Model_Shipping_Rate
 
     public function __construct()
     {
+        Mage::log(__METHOD__.'() Starting');
         parent::__construct();
         foreach ($this->getCode('condition_name') as $k=>$v) {
             $this->_conditionNames[] = $k;
@@ -53,9 +54,12 @@ class EcomCore_Freight_Model_Shipping_Rate
 
     public function collectRates(Mage_Shipping_Model_Rate_Request $request)
     {
+
         if (!$this->getConfigFlag('active')) {
+            Mage::log(__METHOD__.'() Module disabled');
             return false;
         }
+        Mage::log(__METHOD__.'() Running');
 
         if (!$request->getConditionName()) {
             $request->setConditionName($this->getConfigData('condition_name') ? $this->getConfigData('condition_name') : $this->_default_condition_name);
@@ -65,12 +69,13 @@ class EcomCore_Freight_Model_Shipping_Rate
         $rates = $this->getRate($request);
 
         if (is_array($rates)) {
+            Mage::log(__METHOD__.'() Multiple options');
             foreach ($rates as $rate) {
                 if (!empty($rate) && $rate['price'] >= 0) {
                     /** @var Mage_Shipping_Model_Rate_Result_Method $method */
                     $method = Mage::getModel('shipping/rate_result_method');
 
-                    $method->setCarrier('eparcel');
+                    $method->setCarrier('eccfreight');
                     $method->setCarrierTitle($this->getConfigData('title'));
                     if ($this->_getChargeCode($rate)) {
                         $_method = strtolower(str_replace(' ', '_', $this->_getChargeCode($rate)));
@@ -78,19 +83,17 @@ class EcomCore_Freight_Model_Shipping_Rate
                         $_method = strtolower(str_replace(' ', '_', $rate['delivery_type']));
                     }
                     $method->setMethod($_method);
-                    if ($this->getConfigData('carriers/eparcel/name')) {
-                        $method->setMethodTitle($this->getConfigData('carriers/eparcel/name'));
+                    if ($this->getConfigData('name')) {
+                        $method->setMethodTitle($this->getConfigData('name'));
                     } else {
                         $method->setMethodTitle($rate['delivery_type']);
                     }
 
-                    $method->setMethodChargeCodeIndividual($rate['charge_code_individual']);
-                    $method->setMethodChargeCodeBusiness($rate['charge_code_business']);
+                    $method->setMethodChargeCode($rate['charge_code']);
 
                     $shippingPrice = $this->getFinalPriceWithHandlingFee($rate['price']);
 
                     $method->setPrice($shippingPrice);
-                    $method->setCost($rate['cost']);
                     $method->setDeliveryType($rate['delivery_type']);
 
                     $result->append($method);
@@ -98,9 +101,10 @@ class EcomCore_Freight_Model_Shipping_Rate
             }
         } else {
             if (!empty($rates) && $rates['price'] >= 0) {
+                Mage::log(__METHOD__.'() Single option');
                 $method = Mage::getModel('shipping/rate_result_method');
 
-                $method->setCarrier('eparcel');
+                $method->setCarrier('eccfreight');
                 $method->setCarrierTitle($this->getConfigData('title'));
 
                 $method->setMethod('bestway');
@@ -116,6 +120,8 @@ class EcomCore_Freight_Model_Shipping_Rate
                 $method->setDeliveryType($rates['delivery_type']);
 
                 $result->append($method);
+            } else {
+                Mage::log(__METHOD__.'() No rates, or free');
             }
         }
 
@@ -158,7 +164,7 @@ class EcomCore_Freight_Model_Shipping_Rate
 
     public function getRate(Mage_Shipping_Model_Rate_Request $request)
     {
-        return Mage::getResourceModel('eccfreight/shipping_carrier_eparcel')->getRate($request);
+        return Mage::getResourceModel('eccfreight/rate')->getRate($request);
     }
 
     public function getCode($type, $code = '')

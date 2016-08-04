@@ -24,7 +24,7 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
 {
     protected function _construct()
     {
-        $this->_init('eccfreight/eparcel', 'pk');
+        $this->_init('eccfreight/rates', 'pk');
     }
 
     public function getRate(Mage_Shipping_Model_Rate_Request $request)
@@ -91,31 +91,24 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
                     break;
             }
 
-
             if (is_array($request->getConditionName())) {
                 $i = 0;
                 foreach ($request->getConditionName() as $conditionName) {
-                    if ($i == 0) {
-                        $select->where('condition_name=?', $conditionName);
-                    } else {
-                        $select->orWhere('condition_name=?', $conditionName);
-                    }
-                    $select->where('condition_from_value<=?', $request->getData($conditionName));
-                    $select->where('condition_to_value>=?', $request->getData($conditionName));
+                    $select->where('weight_from<=?', $request->getData($conditionName));
+                    $select->where('weight_to>=?', $request->getData($conditionName));
 
                     $i++;
                 }
             } else {
-                $select->where('condition_name=?', $request->getConditionName());
-                $select->where('condition_from_value<=?', $request->getData($request->getConditionName()));
-                $select->where('condition_to_value>=?', $request->getData($request->getConditionName()));
+                $select->where('weight_from<=?', $request->getData($request->getConditionName()));
+                $select->where('weight_to>=?', $request->getData($request->getConditionName()));
             }
             $select->where('website_id=?', $request->getWebsiteId());
 
             $select->order('dest_country_id DESC');
             $select->order('dest_region_id DESC');
             $select->order('dest_zip DESC');
-            $select->order('condition_from_value DESC');
+            $select->order('weight_from DESC');
 
             // pdo has an issue. we cannot use bind
 
@@ -167,7 +160,7 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
 
     public function uploadAndImport(Varien_Object $object)
     {
-        $csvFile = $_FILES["groups"]["tmp_name"]["rates"]["fields"]["import"]["value"];
+        $csvFile = $_FILES["groups"]["tmp_name"]["eccfreight"]["fields"]["import"]["value"];
 
         if (!empty($csvFile)) {
 
@@ -176,7 +169,7 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
 
             $csv = trim(file_get_contents($csvFile));
 
-            $table = Mage::getSingleton('core/resource')->getTableName('eccfreight/eparcel');
+            $table = Mage::getSingleton('core/resource')->getTableName('eccfreight/rates');
 
             $websiteId = $object->getScopeId();
 
@@ -286,26 +279,30 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
                             $csvLine['price per article'] = (float)$csvLine['price per article'];
                         }
 
-                        unset($csvLine['country']);
-                        unset($csvLine['state']);
-                        unset($csvLine['postcodes']);
-
                         $dataset = array(
                             'website_id'             => $websiteId,
                             'dest_country_id'        => $countryId,
                             'dest_region_id'         => $regionId,
                             'dest_zip'               => $zip,
                         );
+
+                        $dataDetails[] = array(
+                            'country' => $csvLine['country'],
+                            'region' => $csvLine['state']
+                        );
+
+                        unset($csvLine['country']);
+                        unset($csvLine['state']);
+                        unset($csvLine['postcodes']);
+
                         foreach ($csvLine as $k => $v) {
-                            $dataset[$csvMap[$k]] = $v;
+                            if (isset($csvMap[$k])) {
+                                $dataset[$csvMap[$k]] = $v;
+                            }
                         }
 
                         $data[] = $dataset;
 
-                        $dataDetails[] = array(
-                            'country' => $csvLine[0],
-                            'region' => $csvLine[1]
-                        );
                     }
                 }
 

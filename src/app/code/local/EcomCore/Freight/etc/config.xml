@@ -32,9 +32,9 @@
             <eccfreight_mysql4>
                 <class>EcomCore_Freight_Model_Mysql4</class>
                 <entities>
-                    <eparcel>
+                    <rates>
                         <table>eccfreight_rates</table>
-                    </eparcel>
+                    </rates>
                 </entities>
             </eccfreight_mysql4>
         </models>
@@ -85,7 +85,7 @@
             <adminhtml>
                 <args>
                     <modules>
-                        <ecomcore_freight before="Mage_Adminhtml">EcomCore_Freight_Adminhtml</ecomcore_freight>
+                        <eccfreight before="Mage_Adminhtml">EcomCore_Freight_Adminhtml</eccfreight>
                     </modules>
                 </args>
             </adminhtml>
@@ -97,7 +97,7 @@
                 <active>0</active>
                 <sallowspecific>0</sallowspecific>
                 <condition_name>package_weight</condition_name>
-                <model>eccfreight/shipping_rate</model>
+                <model>eccfreight/rate</model>
                 <name>eccfreight</name>
                 <title>Custom Freight</title>
                 <sallowspecific>1</sallowspecific>
