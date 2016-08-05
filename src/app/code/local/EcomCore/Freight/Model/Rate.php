@@ -13,10 +13,12 @@
  * @copyright  Copyright (c) 2008 Auction Maid (http://www.auctionmaid.com)
  * @author     Karen Baker <enquiries@auctionmaid.com>
  *
+ * Subsequently based on Fontis Australia Shipping code.
+ * @copyright  Copyright (c) 2014 Fontis Pty. Ltd. (http://www.fontis.com.au)
+ * @author     Chris Norton
+ *
  * @category   EcomCore
  * @package    EcomCore_Freight
- * @author     Chris Norton
- * @copyright  Copyright (c) 2014 EcomCore Pty. Ltd. (http://www.ecomcore.com.au)
  * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -59,7 +61,6 @@ class EcomCore_Freight_Model_Rate
             Mage::log(__METHOD__.'() Module disabled');
             return false;
         }
-        Mage::log(__METHOD__.'() Running');
 
         if (!$request->getConditionName()) {
             $request->setConditionName($this->getConfigData('condition_name') ? $this->getConfigData('condition_name') : $this->_default_condition_name);
@@ -77,12 +78,14 @@ class EcomCore_Freight_Model_Rate
 
                     $method->setCarrier('eccfreight');
                     $method->setCarrierTitle($this->getConfigData('title'));
+
                     if ($this->_getChargeCode($rate)) {
-                        $_method = strtolower(str_replace(' ', '_', $this->_getChargeCode($rate)));
+                        $methodCode = strtolower(str_replace(' ', '_', $this->_getChargeCode($rate)));
                     } else {
-                        $_method = strtolower(str_replace(' ', '_', $rate['delivery_type']));
+                        $methodCode = strtolower(str_replace(' ', '_', $rate['delivery_type']));
                     }
-                    $method->setMethod($_method);
+                    $method->setMethod($methodCode);
+
                     if ($this->getConfigData('name')) {
                         $method->setMethodTitle($this->getConfigData('name'));
                     } else {
@@ -92,6 +95,20 @@ class EcomCore_Freight_Model_Rate
                     $method->setMethodChargeCode($rate['charge_code']);
 
                     $shippingPrice = $this->getFinalPriceWithHandlingFee($rate['price']);
+                    if (isset($rate['surcharge']) && !empty($rate['surcharge'])) {
+                        if (strpos($rate['surcharge'], '%') !== false) {
+                            $rate['surcharge'] = str_replace('%', '', $rate['surcharge']);
+                            $rate['surcharge'] = (float)substr($rate['surcharge'], 0, -1);
+                            if ($rate['surcharge'] > 0) {
+                                Mage::log(__METHOD__.'() Applying a surcharge of %'.$rate['surcharge'].' to '.$rate['price']);
+                                $shippingPrice += ($shippingPrice / 100 * $rate['surcharge']);
+                            }
+                        } else {
+                            $rate['surcharge'] = (float)$rate['surcharge'];
+                            Mage::log(__METHOD__.'() Applying a surcharge of $'.$rate['surcharge'].' to '.$rate['price']);
+                            $shippingPrice += $rate['surcharge'];
+                        }
+                    }
 
                     $method->setPrice($shippingPrice);
                     $method->setDeliveryType($rate['delivery_type']);
@@ -100,29 +117,7 @@ class EcomCore_Freight_Model_Rate
                 }
             }
         } else {
-            if (!empty($rates) && $rates['price'] >= 0) {
-                Mage::log(__METHOD__.'() Single option');
-                $method = Mage::getModel('shipping/rate_result_method');
-
-                $method->setCarrier('eccfreight');
-                $method->setCarrierTitle($this->getConfigData('title'));
-
-                $method->setMethod('bestway');
-                $method->setMethodTitle($this->getConfigData('name'));
-
-                $method->setMethodChargeCodeIndividual($rates['charge_code_individual']);
-                $method->setMethodChargeCodeBusiness($rates['charge_code_business']);
-
-                $shippingPrice = $this->getFinalPriceWithHandlingFee($rates['price']);
-
-                $method->setPrice($shippingPrice);
-                $method->setCost($rates['cost']);
-                $method->setDeliveryType($rates['delivery_type']);
-
-                $result->append($method);
-            } else {
-                Mage::log(__METHOD__.'() No rates, or free');
-            }
+            Mage::log(__METHOD__.'() No rates found for this request');
         }
 
         return $result;
@@ -173,13 +168,9 @@ class EcomCore_Freight_Model_Rate
         $codes = array(
             'condition_name' => array(
                 'package_weight' => $helper->__('Weight vs. Destination'),
-                'package_value'  => $helper->__('Price vs. Destination'),
-                'package_qty'    => $helper->__('# of Items vs. Destination'),
             ),
             'condition_name_short' => array(
                 'package_weight' => $helper->__('Weight (and above)'),
-                'package_value'  => $helper->__('Order Subtotal (and above)'),
-                'package_qty'    => $helper->__('# of Items (and above)'),
             ),
         );
 
@@ -205,7 +196,7 @@ class EcomCore_Freight_Model_Rate
      */
     public function getAllowedMethods()
     {
-        return array('bestway' => $this->getConfigData('name'));
+        return array('eccfreight' => $this->getConfigData('name'));
     }
 
     /*
@@ -258,19 +249,4 @@ class EcomCore_Freight_Model_Rate
         return $result;
     }
 
-    /**
-     * Event Observer. Triggered before an adminhtml widget template is rendered.
-     * We use this to add our action to bulk actions in the sales order grid instead of overridding the class.
-     */
-    public function addExportToBulkAction($observer)
-    {
-        if (! $observer->block instanceof Mage_Adminhtml_Block_Sales_Order_Grid) {
-            return;
-        }
-
-        $observer->block->getMassactionBlock()->addItem('eparcelexport', array(
-            'label' => $observer->block->__('Export to CSV (eParcel)'),
-            'url' => $observer->block->getUrl('*/eccfreight_rates/export')
-        ));
-    }
 }

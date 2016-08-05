@@ -56,7 +56,7 @@
                         <import translate="label">
                             <label>Import</label>
                             <frontend_type>import</frontend_type>
-                            <backend_model>eccfreight/shipping_config_rate</backend_model>
+                            <backend_model>eccfreight/config_rate</backend_model>
                             <sort_order>6</sort_order>
                             <show_in_default>0</show_in_default>
                             <show_in_website>1</show_in_website>
@@ -86,6 +86,14 @@
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
                         </title>
+                        <shippingclasses>
+                            <label>Shipping classes</label>
+                            <frontend_type>textarea</frontend_type>
+                            <sort_order>4</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </shippingclasses>
                         <sallowspecific translate="label">
                             <label>Ship to applicable countries</label>
                             <frontend_type>select</frontend_type>
@@ -105,10 +113,44 @@
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
                         </specificcountry>
+                        <zonemapping translate="label">
+                            <label>Allow Zone mapping</label>
+                            <frontend_type>select</frontend_type>
+                            <sort_order>92</sort_order>
+                            <source_model>adminhtml/system_config_source_yesno</source_model>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </zonemapping>
+                        <zonemappingRules translate="label">
+                            <label>Zone mapping rules</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>93</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </zonemappingRules>
+                        <localCustomisation translate="label">
+                            <label>Local customisation rules</label>
+                            <frontend_type>textarea</frontend_type>
+                            <sort_order>94</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </localCustomisation>
+<!--                        <finalvalueformula translate="label">
+                            <label>Apply this formula to the final price (eg: +1 would add $1, *1.1 would add 10%, ^1 would round up the nearest full value)</label>
+                            <frontend_type>textarea</frontend_type>
+                            <sort_order>92</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </finalvalueformula>
+-->
                         <showmethod translate="label">
                             <label>Show method if not applicable</label>
                             <frontend_type>select</frontend_type>
-                            <sort_order>92</sort_order>
+                            <sort_order>94</sort_order>
                             <source_model>adminhtml/system_config_source_yesno</source_model>
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>

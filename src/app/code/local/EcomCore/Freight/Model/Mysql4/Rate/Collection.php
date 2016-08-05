@@ -52,13 +52,6 @@ class EcomCore_Freight_Model_Mysql4_Rate_Collection extends Varien_Data_Collecti
         return $this;
     }
 
-    public function setConditionFilter($conditionName)
-    {
-        $this->_select->where("condition_name = ?", $conditionName);
-
-        return $this;
-    }
-
     public function setCountryFilter($countryId)
     {
         $this->_select->where("dest_country_id = ?", $countryId);

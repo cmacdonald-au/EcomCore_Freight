@@ -29,27 +29,20 @@ class EcomCore_Freight_Adminhtml_EccfreightController extends Mage_Adminhtml_Con
      */
     public function exportTableratesAction()
     {
+
+        $helper = Mage::helper('eccfreight/rate');
+
+        $headerLine = array_values($helper->csvFieldMap);
+        $csvFields  = array_keys($helper->csvFieldMap);
+
+        // These are processed and not sent directly.
+        unset($csvFeilds['dest_country_id']);
+        unset($csvFeilds['dest_region_id']);
+
         Mage::log(__METHOD__.'() Doing things');
         $rates = Mage::getResourceModel('eccfreight/rate_collection');
         $response = array(
-            array(
-                'Country',
-                'State',
-                'Postcodes',
-                'Weight from',
-                'Weight to',
-                'Basic Price',
-                'Price Per Kg',
-                'Price Per Article',
-                'Consignment Allowed',
-                'Max Kg Per Consignment',
-                'Capped price',
-                'Surcharge',
-                'Delivery Type',
-                'Charge Code Individual',
-                'Charge Code Business',
-                'Adjustment Rules'
-            )
+            $headerLine;
         );
 
         foreach ($rates as $rate) {
@@ -58,24 +51,16 @@ class EcomCore_Freight_Adminhtml_EccfreightController extends Mage_Adminhtml_Con
             $regionId    = $rate->getData('dest_region_id');
             $regionCode  = Mage::getModel('directory/region')->load($regionId)->getCode();
 
-            $response[] = array(
+            $line = array(
                 $countryCode,
-                $regionCode,
-                $rate->getData('dest_zip'),
-                $rate->getData('weight_from'),
-                $rate->getData('weight_to'),
-                $rate->getData('price'),
-                $rate->getData('price_per_kg'),
-                $rate->getData('price_per_article'),
-                $rate->getData('consignable'),
-                $rate->getData('consignment_allowed'),
-                $rate->getData('maxkg_per_consigment'),
-                $rate->getData('cap'),
-                $rate->getData('surcharge'),
-                $rate->getData('delivery_type'),
-                $rate->getData('charge_code'),
-                $rate->getData('adjustment_rules'),
+                $regionCode
             );
+
+            foreach ($csvFields as $field) {
+                $line[] = $rate->getData($field);
+            }
+
+            $response[] = $line;
         }
 
         $csv = new Varien_File_Csv();

@@ -22,6 +22,9 @@
 
 class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
 {
+
+    protected $rateRequest;
+
     protected function _construct()
     {
         $this->_init('eccfreight/rates', 'pk');
@@ -29,20 +32,14 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
 
     public function getRate(Mage_Shipping_Model_Rate_Request $request)
     {
+        $this->rateRequest = $request;
         $read = $this->_getReadAdapter();
 
-        $postcode = $request->getDestPostcode();
-        $table = $this->getMainTable();
-        $storeId = $request->getStoreId();
+        $itemSummary = $this->summariseItems();
 
-        $insuranceStep = (float)Mage::getStoreConfig('carriers/eparcel/insurance_step', $storeId);
-        $insuranceCostPerStep = (float)Mage::getStoreConfig('carriers/eparcel/insurance_cost_per_step', $storeId);
-        $signatureRequired = Mage::getStoreConfigFlag('carriers/eparcel/signature_required', $storeId);
-        if ($signatureRequired) {
-            $signatureCost = (float)Mage::getStoreConfig('carriers/eparcel/signature_cost', $storeId);
-        } else {
-            $signatureCost = 0;
-        }
+        $postcode = $request->getDestPostcode();
+        $table    = $this->getMainTable();
+        $storeId  = $request->getStoreId();
 
         Mage::log($request->getDestCountryId());
         Mage::log($request->getDestRegionId());
@@ -52,11 +49,6 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
         for ($j = 0; $j < 5; $j++) {
 
             $select = $read->select()->from($table);
-
-            // Support for Multi Warehouse Extension.
-            if ($request->getWarehouseId() > 0) {
-                $select->where('stock_id = ?', $request->getWarehouseId());
-            }
 
             switch($j) {
                 case 0:
@@ -96,7 +88,6 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
                 foreach ($request->getConditionName() as $conditionName) {
                     $select->where('weight_from<=?', $request->getData($conditionName));
                     $select->where('weight_to>=?', $request->getData($conditionName));
-
                     $i++;
                 }
             } else {
@@ -110,52 +101,128 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
             $select->order('dest_zip DESC');
             $select->order('weight_from DESC');
 
-            // pdo has an issue. we cannot use bind
-
             $newdata=array();
             Mage::log($select->__toString());
             $row = $read->fetchAll($select);
             if (!empty($row) && ($j < 5)) {
-                // have found a result or found nothing and at end of list!
+
                 foreach ($row as $data) {
+
                     try {
-                        $price = (float)($data['price']);
 
-                        // add per-Kg cost
-                        $conditionValue = (float)($request->getData($request->getConditionName()));
-                        $price += (float)($data['price_per_kg']) * $conditionValue;
+                        $price = 0;
+                        if ($data['price_per_increment'] > 0 && empty($data['increment_weight'])) {
+                            $data['increment_weight'] = 1;
+                        }
+                        $data['basic_price'] = $data['price'];
 
-                        // add signature cost
-                        $price += $signatureCost;
+                        $totalWeight = 0;
+                        $totalUnits  = 0;
+                        foreach ($itemSummary as $className => $values) {
+                            $totalWeight += $values['weight'];
+                            $totalUnits  += $values['units'];
+                            if (isset($values['charge'])) {
+                                // Simple one - the rates have already been set for this product
+                                $price += $values['charge'];
+                            } else {
+                                if ($data['consignment_allowed'] == 1) {
+                                    $price = (float)($data['price']);
+                                    if ($values['weight'] > $data['increment_weight']) {
+                                        $increments = $values['weight']%$data['increment_weight'];
+                                    }
+                                    $price += $increments * $data['price_per_increment'];
+                                } else {
+                                    foreach ($values['item_data'] as $item) {
+                                        if ($item['weight'] > $data['increment_weight']) {
+                                            $increments = floor($item['weight']/$data['increment_weight']);
+                                        }
+                                        Mage::log(__METHOD__.'() Adding 1 unit @ $'.$data['basic_price'].' plus ('.$increments.' * '.$data['price_per_increment'].')');
+                                        $price += (float)($data['basic_price']) + ($increments * $data['price_per_increment']);
+                                    }
+                                }
+                            }
+                        }
 
-                        // add version without insurance
-                        $data['price'] = (string)$price;
+                        $data['price'] = (float)$price;
+                        Mage::log(__METHOD__.'() Rate set: '.json_encode($data, true));
                         $newdata[]=$data;
 
-                        if (Mage::getStoreConfig('carriers/eparcel/insurance_enable', $storeId)) {
-                            // add version with insurance
-                            // work out how many insurance 'steps' we have
-                            $steps = ceil($request->getPackageValue() / $insuranceStep);
-                            Mage::log("Insurance steps: $steps");
-                            // add on number of 'steps' multiplied by the
-                            // insurance cost per step
-                            $insuranceCost = $insuranceCostPerStep * $steps;
-                            Mage::log("Insurance cost: $insuranceCost");
-                            $price += $insuranceCost;
-
-                            $data['price'] = (string)$price;
-                            $data['delivery_type'] .= " with TransitCover";
-                            $newdata[]=$data;
-                        }
                     } catch (Exception $e) {
                         Mage::log($e->getMessage());
                     }
+
                 }
                 break;
+
             }
         }
         Mage::log(var_export($newdata, true));
         return $newdata;
+    }
+
+    protected function summariseItems()
+    {
+        $request = $this->rateRequest;
+        $items = $request->getAllItems();
+        $numParcels = $request->getPackageQty();
+        $websiteId = $request->getWebsiteId();
+
+        $shippingClassRules = Mage::getStoreConfig('carriers/eccfreight/shippingclasses', $websiteId);
+
+        $itemSummary = array(
+            'standard' => array('units' => 0, 'weight' => 0),
+        );
+
+        $itemNumber    = 0;
+        $parcelCount   = 0;
+        foreach ($items as $item) {
+            $parcelCount++;
+            $productId = $item->getProductId();
+            $product   = Mage::getModel('catalog/product')->load($productId);
+
+            $unitCount  = $item->getQty();
+            $unitWeight = $item->getWeight();
+
+            $shipClass = 'standard';
+            if (!empty($shippingClassRules)) {
+                $shipClass = $product->getAttributeText('shipping_class');
+                Mage::log(__METHOD__.'() #'.$itemNumber.' {'.$unitCount.' X '.$unitWeight.'} shipClass override: `'.$shipClass.'`');
+                if (empty($shipClass)) {
+                    if ($unitWeight >= 5) {
+                        $shipClass = 'large';
+                    } else {
+                        $shipClass = 'small';
+                    }
+                }
+            }
+
+            $itemSummary[$shipClass]['weight'] += ($unitWeight*$unitCount);
+            $itemSummary[$shipClass]['units']  += $unitCount;
+            $itemSummary[$shipClass]['item_data'][] = array('weight' => $unitWeight, 'units' => $unitCount);
+
+            if ($shipClass == 'fixed') {
+                $itemSummary[$shipClass]['charge'] += ($product->getShippingFlatrate()*$item->getQty());
+            } else if (substr($shipClass, 0, 6) == 'capped') {
+                // basic structure is that capped groupings are set with capped<class>_value
+                // example rules; 
+                //  * items with cappedhats will be grouped together.
+                //  * the value of the cap will be defined by the shiprate_capped attribute for each product.
+                //  * If the product has ship_class set to 'cappedhats' and the shiprate_capped attribute has a value of 20.
+                //  * all products with the same combination will be capped at that value.
+                $capClass = substr($shipClass, (strlen($shipClass)-7)* -1);
+                $capRate  = $product->getShiprateCapped();
+                if (false === isset($itemSummary['capped'][$capClass])) {
+                    $itemSummary['capped'][$capClass.'-'.$capRate] = array('units' => 0, 'charge' => $capRate);
+                }
+                $itemSummary['capped'][$capClass.'-'.$capRate]['units'] += $unitCount;
+            } else {
+                $itemSummary[$shipClass]['units']  += $unitCount;
+            }
+            $itemNumber++;
+        }
+
+        return $itemSummary;
+
     }
 
     public function uploadAndImport(Varien_Object $object)
@@ -267,10 +334,10 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
                             $csvLine['basic price'] = (float)$csvLine['basic price'];
                         }
 
-                        if (!$this->_isPositiveDecimalNumber($csvLine['price per kg'])) {
-                            $exceptions[] = Mage::helper('shipping')->__('Invalid kg price "%s" on row #%s', $csvLine['price per kg'], ($k+1));
+                        if (!$this->_isPositiveDecimalNumber($csvLine['price per increment'])) {
+                            $exceptions[] = Mage::helper('shipping')->__('Invalid increment price "%s" on row #%s', $csvLine['price per kg'], ($k+1));
                         } else {
-                            $csvLine['price per kg'] = (float)$csvLine['price per kg'];
+                            $csvLine['price per increment'] = (float)$csvLine['price per increment'];
                         }
 
                         if (!$this->_isPositiveDecimalNumber($csvLine['price per article'])) {
@@ -307,12 +374,26 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
                 }
 
                 if (empty($exceptions)) {
+                    $readCon    = $this->_getReadAdapter();
                     $connection = $this->_getWriteAdapter();
 
                     $condition = array(
                         $connection->quoteInto('website_id = ?', $websiteId),
                     );
                     $connection->delete($table, $condition);
+
+                    $zoneMapping = Mage::getStoreConfig('carriers/eccfreight/zonemapping', $websiteId);
+                    $zoneMappingRules = explode(',', Mage::getStoreConfig('carriers/eccfreight/zonemappingRules', $websiteId));
+                    if ($zoneMapping && count($zoneMappingRules) == 3) {
+                        $tmp = $zoneMappingRules;
+                        $zoneMappingRules = array();
+                        foreach ($tmp as $v) {
+                            $rule = explode(':', $v);
+                            $zoneMappingRules[$rule[0]] = $rule[1];
+                        }
+                        $zoneMappingTable = Mage::getSingleton('core/resource')->getTableName($zoneMappingRules['table']);
+                        $zoneMappingQuery = 'SELECT '.$zoneMappingRules['postcode'].' FROM '.$zoneMappingTable.' WHERE '.$zoneMappingRules['zone'].' = :zone';
+                    }
 
                     Mage::log(count($data)." lines read from CSV");
                     foreach($data as $k=>$dataLine) {
@@ -321,26 +402,35 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
                             // string into an array
                             $postcodes = array();
                             foreach(explode(',', $dataLine['dest_zip']) as $postcodeEntry) {
-                                $postcodeEntry = explode("-", trim($postcodeEntry));
-                                if(count($postcodeEntry) == 1) {
-                                    Mage::log("Line $k, single postcode: ".$postcodeEntry[0]);
-                                    // if the postcode entry is length 1, it's
-                                    // just a single postcode
-                                    $postcodes[] = $postcodeEntry[0];
-                                } else {
-                                    // otherwise it's a range, so convert that
-                                    // to a sequence of numbers
-                                    $pcode1 = (int)$postcodeEntry[0];
-                                    $pcode2 = (int)$postcodeEntry[1];
-                                    Mage::log("Line $k, postcode range: $pcode1-$pcode2");
 
-                                    $postcodes = array_merge($postcodes, range(min($pcode1, $pcode2), max($pcode1, $pcode2)));
+                                if ($zoneMapping && preg_match('/[a-zA-Z]+/', $postcodeEntry)) {
+                                    $result = $readCon->query($zoneMappingQuery, array('zone' => $postcodeEntry));
+                                    while ($row = $result->fetch()) {
+                                        $postcodes[] = $row[$zoneMappingRules['postcode']];
+                                    }
+                                    mage::log(__METHOD__.'() Got postcode list for '.$postcodeEntry.' {'.json_encode($postcodes).'}');
+                                } else {
+                                    $postcodeEntry = explode("-", trim($postcodeEntry));
+                                    if(count($postcodeEntry) == 1) {
+                                        // if the postcode entry is length 1, it's
+                                        // just a single postcode
+                                        $postcodes[] = $postcodeEntry[0];
+                                        Mage::log("Line $k, single postcode: ".$postcodeEntry[0]);
+                                    } else {
+                                        // otherwise it's a range, so convert that
+                                        // to a sequence of numbers
+                                        $pcode1 = (int)$postcodeEntry[0];
+                                        $pcode2 = (int)$postcodeEntry[1];
+
+                                        $postcodes = array_merge($postcodes, range(min($pcode1, $pcode2), max($pcode1, $pcode2)));
+                                        Mage::log("Line $k, postcode range: $pcode1-$pcode2");
+                                    }
                                 }
                             }
 
                             foreach($postcodes as $postcode) {
                                 $dataLine['dest_zip'] = str_pad($postcode, 4, "0", STR_PAD_LEFT);
-                                mage::log(__METHOD__.'() inserting '.json_encode($dataLine));
+                                //mage::log(__METHOD__.'() inserting '.json_encode($dataLine));
                                 $connection->insert($table, $dataLine);
                             }
                         } catch (Exception $e) {

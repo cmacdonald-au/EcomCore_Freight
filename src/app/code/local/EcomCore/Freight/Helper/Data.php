@@ -83,6 +83,15 @@ class EcomCore_Freight_Helper_Data extends Mage_Core_Helper_Abstract
         }
     }
 
+    public function getRegion($postcode, $country)
+    {
+        $res  = Mage::getSingleton('core/resource');
+        $conn = $res->getConnection('eccfreight_read');
+        return $conn->fetchRow('SELECT au.*, dcr.region_id FROM ' . $res->getTableName('eccfreight_postcode') . ' AS au
+             INNER JOIN ' . $res->getTableName('directory_country_region') . ' AS dcr ON au.region_code = dcr.code
+             WHERE postcode = :postcode LIMIT 1', array('postcode' => $postcode));
+    }
+
     /**
      * @return array
      */
