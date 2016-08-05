@@ -3,40 +3,40 @@
 class EcomCore_Freight_Model_Estimate
 {
 
-	protected $quote;
-	protected $products = array();
-	public $result;
+    protected $quote;
+    protected $products = array();
+    public $result;
 
-	public $address = array(
-		'country_id' => '',
-		'region_id'  => '',
-		'postcode'   => '',
-		'region'     => '',
-		'city'       => '',
-	);
+    public $address = array(
+        'country_id' => '',
+        'region_id'  => '',
+        'postcode'   => '',
+        'region'     => '',
+        'city'       => '',
+    );
 
-	public $existingCart = false;
-	public $couponCode   = false;
+    public $existingCart = false;
+    public $couponCode   = false;
 
-	public function setProducts($skuList)
-	{
-		$this->products = array();
-		foreach ($skuList as $sku) {
-        	$product = Mage::helper('catalog/product')->getProduct($sku, $this->getQuote()->getStoreId());
-        	if ($product->hasData()) {
-        		$this->products[] = $product;
-        	}
-		}
-	}
+    public function setProducts($skuList)
+    {
+        $this->products = array();
+        foreach ($skuList as $sku) {
+            $product = Mage::helper('catalog/product')->getProduct($sku, $this->getQuote()->getStoreId());
+            if ($product->hasData()) {
+                $this->products[] = $product;
+            }
+        }
+    }
 
-	public function setDestination($addressInfo)
-	{
-		foreach ($addressInfo as $k => $v) {
-			if (array_key_exists($k, $this->address)) {
-				$this->address[$k] = $v;
-			}
-		}
-	}
+    public function setDestination($addressInfo)
+    {
+        foreach ($addressInfo as $k => $v) {
+            if (array_key_exists($k, $this->address)) {
+                $this->address[$k] = $v;
+            }
+        }
+    }
 
     /**
      * Retrieve sales quote object
@@ -56,21 +56,21 @@ class EcomCore_Freight_Model_Estimate
         return $this->quote;
     }
 
-	/**
-	* Reset quote object
-	*
-	* @return EcomDev_ProductPageShipping_Model_Estimate
-	*/
-	public function resetQuote()
-	{
-		$this->getQuote()->removeAllAddresses();
+    /**
+    * Reset quote object
+    *
+    * @return EcomDev_ProductPageShipping_Model_Estimate
+    */
+    public function resetQuote()
+    {
+        $this->getQuote()->removeAllAddresses();
 
-		if ($this->getCustomer()) {
-			$this->getQuote()->setCustomer($this->getCustomer());
-		}
+        if ($this->getCustomer()) {
+            $this->getQuote()->setCustomer($this->getCustomer());
+        }
 
-		return $this;
-	}     
+        return $this;
+    }     
 
     /**
      * Retrieve list of shipping rates
@@ -110,18 +110,18 @@ class EcomCore_Freight_Model_Estimate
         }
 
         foreach ($this->products as $product) {
-	        $addToCartInfo = (array) $product->getAddToCartInfo();
-	        $request = new Varien_Object($addToCartInfo); 
+            $addToCartInfo = (array) $product->getAddToCartInfo();
+            $request = new Varien_Object($addToCartInfo); 
 
-	        if ($product->getStockItem()) {
-	            $minimumQty = $product->getStockItem()->getMinSaleQty();
-	            if($minimumQty > 0 && $request->getQty() < $minimumQty){
-	                $request->setQty($minimumQty);
-	            }
-	        }
+            if ($product->getStockItem()) {
+                $minimumQty = $product->getStockItem()->getMinSaleQty();
+                if($minimumQty > 0 && $request->getQty() < $minimumQty){
+                    $request->setQty($minimumQty);
+                }
+            }
 
-	        $result = $this->getQuote()->addProduct($product, $request);
-	    }
+            $result = $this->getQuote()->addProduct($product, $request);
+        }
 
         if (is_string($result)) {
             Mage::throwException($result);
@@ -134,5 +134,5 @@ class EcomCore_Freight_Model_Estimate
         $this->result = $shippingAddress->getGroupedAllShippingRates();
 
         return $this->result;
-    }	
+    }    
 }
