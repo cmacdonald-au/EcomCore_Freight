@@ -47,11 +47,11 @@ CREATE TABLE {$this->getTable('eccfreight_rates')} (
   `cap` decimal(12,4) DEFAULT NULL,
   `surcharge` varchar(12) DEFAULT NULL,
   `min_charge` decimal(12,4) DEFAULT NULL,  
-  `delivery_type` varchar(50) NOT NULL default '',
-  `charge_code` varchar(50) default NULL,
+  `delivery_group` varchar(50) NOT NULL default '',
+  `carrier_code` varchar(50) default NULL,
   `adjustment_rules` varchar(255) default NULL,
   PRIMARY KEY  (`pk`),
-  UNIQUE KEY `dest_country` ( `website_id` , `dest_country_id` , `dest_region_id` , `dest_zip` , `weight_from` , `weight_to`, `charge_code`)
+  UNIQUE KEY `dest_country` ( `website_id` , `dest_country_id` , `dest_region_id` , `dest_zip` , `weight_from` , `weight_to`, `delivery_group`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 ");
 

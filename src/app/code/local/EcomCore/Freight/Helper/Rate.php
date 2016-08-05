@@ -40,8 +40,8 @@ class EcomCore_Freight_Helper_Rate extends Mage_Core_Helper_Abstract
         'cap'                  => 'Capped price',
         'surcharge'            => 'Surcharge',
         'min_charge'           => 'Min Charge',
-        'delivery_type'        => 'Delivery Type',
-        'charge_code'          => 'Charge Code',
+        'delivery_group'       => 'Delivery Group',
+        'carrier_code'         => 'Carrier Code',
         'adjustment_rules'     => 'Adjustment Rules',
     );
 

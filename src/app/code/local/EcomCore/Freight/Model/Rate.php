@@ -79,20 +79,20 @@ class EcomCore_Freight_Model_Rate
                     $method->setCarrier('eccfreight');
                     $method->setCarrierTitle($this->getConfigData('title'));
 
-                    if ($this->_getChargeCode($rate)) {
-                        $methodCode = strtolower(str_replace(' ', '_', $this->_getChargeCode($rate)));
+                    if ($rate['carrier_code']) {
+                        $methodCode = strtolower(str_replace(' ', '_', $rate['carrier_code']));
                     } else {
-                        $methodCode = strtolower(str_replace(' ', '_', $rate['delivery_type']));
+                        $methodCode = strtolower(str_replace(' ', '_', $rate['delivery_group']));
                     }
                     $method->setMethod($methodCode);
 
                     if ($this->getConfigData('name')) {
                         $method->setMethodTitle($this->getConfigData('name'));
                     } else {
-                        $method->setMethodTitle($rate['delivery_type']);
+                        $method->setMethodTitle($rate['delivery_group']);
                     }
 
-                    $method->setMethodChargeCode($rate['charge_code']);
+                    $method->setMethodChargeCode($rate['carrier_code']);
 
                     $shippingPrice = $this->getFinalPriceWithHandlingFee($rate['price']);
                     if (isset($rate['surcharge']) && !empty($rate['surcharge'])) {
@@ -111,7 +111,7 @@ class EcomCore_Freight_Model_Rate
                     }
 
                     $method->setPrice($shippingPrice);
-                    $method->setDeliveryType($rate['delivery_type']);
+                    $method->setDeliveryType($rate['delivery_group']);
 
                     $result->append($method);
                 }
@@ -121,40 +121,6 @@ class EcomCore_Freight_Model_Rate
         }
 
         return $result;
-    }
-
-    /**
-     * @param array $rate
-     * @return mixed
-     */
-    protected function _getChargeCode($rate)
-    {
-        /* Is this customer is in a ~business~ group ? */
-        $isBusinessCustomer = (
-            Mage::getSingleton('customer/session')->isLoggedIn()
-            AND
-            in_array(
-                Mage::getSingleton('customer/session')->getCustomerGroupId(),
-                explode(
-                    ',',
-                    Mage::getStoreConfig('doghouse_eparcelexport/charge_codes/business_groups')
-                )
-            )
-        );
-
-        if ($isBusinessCustomer) {
-            if (isset($rate['charge_code_business']) && $rate['charge_code_business']) {
-                return $rate['charge_code_business'];
-            }
-
-            return Mage::getStoreConfig('doghouse_eparcelexport/charge_codes/default_charge_code_business');
-        } else {
-            if (isset($rate['charge_code_individual']) && $rate['charge_code_individual']) {
-                return $rate['charge_code_individual'];
-            }
-
-            return Mage::getStoreConfig('doghouse_eparcelexport/charge_codes/default_charge_code_individual');
-        }
     }
 
     public function getRate(Mage_Shipping_Model_Rate_Request $request)

@@ -24,31 +24,36 @@
  * @category   EcomCore
  * @package    EcomCore_Freight
  */
-class EcomCore_Freight_Model_Shipping_Config_Weightunits
+class EcomCore_Freight_Model_Config_Weightunits
 {
+    const KILOS = 1;
+    const GRAMS = 2;
+
     /**
+     * Options getter
+     *
      * @return array
      */
     public function toOptionArray()
     {
-        $helper = Mage::helper('adminhtml');
+        $helper = Mage::helper('eccfreight');
         return array(
-            array(
-                'value' => 1000,
-                'label' => $helper->__('Kilograms (kg)')
-            ),
-            array(
-                'value' => 1,
-                'label' => $helper->__('Grams (g)')
-            ),
-            array(
-                'value' => 453.59,
-                'label' => $helper->__('Pounds (lb)')
-            ),
-            array(
-                'value' => 28.35,
-                'label' => $helper->__('Ounces (oz)')
-            ),
+            array('value' => self::KILOS, 'label' => $helper->__('Kilograms')),
+            array('value' => self::GRAMS, 'label' => $helper->__('Grams')),
+        );
+    }
+
+    /**
+     * Get options in "key-value" format
+     *
+     * @return array
+     */
+    public function toArray()
+    {
+        $helper = Mage::helper('eccfreight');
+        return array(
+            self::KILOS  => $helper->__('Kilograms'),
+            self::GRAMS  => $helper->__('Grams'),
         );
     }
 }

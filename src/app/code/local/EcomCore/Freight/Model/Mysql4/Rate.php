@@ -24,6 +24,8 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
 {
 
     protected $rateRequest;
+    protected $configValues;
+    protected $websiteId;
 
     protected function _construct()
     {
@@ -33,6 +35,7 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
     public function getRate(Mage_Shipping_Model_Rate_Request $request)
     {
         $this->rateRequest = $request;
+        $this->websiteId = $request->getWebsiteId();
         $read = $this->_getReadAdapter();
 
         $itemSummary = $this->summariseItems();
@@ -165,9 +168,8 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
         $request = $this->rateRequest;
         $items = $request->getAllItems();
         $numParcels = $request->getPackageQty();
-        $websiteId = $request->getWebsiteId();
 
-        $shippingClassRules = Mage::getStoreConfig('carriers/eccfreight/shippingclasses', $websiteId);
+        $shippingClassRules = $this->getConfigValue('shippingclasses');
 
         $itemSummary = array(
             'standard' => array('units' => 0, 'weight' => 0),
@@ -382,8 +384,8 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
                     );
                     $connection->delete($table, $condition);
 
-                    $zoneMapping = Mage::getStoreConfig('carriers/eccfreight/zonemapping', $websiteId);
-                    $zoneMappingRules = explode(',', Mage::getStoreConfig('carriers/eccfreight/zonemappingRules', $websiteId));
+                    $zoneMapping = $this->getConfigValue('zonemapping');
+                    $zoneMappingRules = explode(',', $this->getConfigValue('zonemappingRules'));
                     if ($zoneMapping && count($zoneMappingRules) == 3) {
                         $tmp = $zoneMappingRules;
                         $zoneMappingRules = array();
@@ -498,6 +500,18 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
             $elements = array_combine($headers, $elements);
         }
         return $elements;
+    }
+
+    protected function getConfigValue($key)
+    {
+        if (empty($this->configValues)) {
+            $this->configValues = Mage::getStoreConfig('carriers/eccfreight', $this->websiteId);
+        }
+        if (isset($this->configValues[$key])) {
+            return $this->configValues[$key];
+        }
+
+        return false;
     }
 
     /**

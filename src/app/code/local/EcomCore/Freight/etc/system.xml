@@ -86,6 +86,33 @@
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
                         </title>
+                        <dimensionunits>
+                            <label>My dimensions are in</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>eccfreight/config_dimensionunits</source_model>
+                            <sort_order>3</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </dimensionunits>
+                        <weightunits>
+                            <label>My weights are in</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>eccfreight/config_weightunits</source_model>
+                            <sort_order>3</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </weightunits>
+                        <cubiccalc>
+                            <label>Override default cubic weight calc</label>
+                            <comment>Default cubic formula is (L*W*H)*250 where the dimensions are meters</comment>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>3</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </cubiccalc>
                         <shippingclasses>
                             <label>Shipping classes</label>
                             <frontend_type>textarea</frontend_type>
@@ -124,6 +151,7 @@
                         </zonemapping>
                         <zonemappingRules translate="label">
                             <label>Zone mapping rules</label>
+                            <comment>table:`table&amp;nbsp;name`,postcode:`postcode&amp;nbsp;field`,zone:`zone&amp;nbsp;field`</comment>
                             <frontend_type>text</frontend_type>
                             <sort_order>93</sort_order>
                             <show_in_default>1</show_in_default>
@@ -139,7 +167,9 @@
                             <show_in_store>1</show_in_store>
                         </localCustomisation>
 <!--                        <finalvalueformula translate="label">
-                            <label>Apply this formula to the final price (eg: +1 would add $1, *1.1 would add 10%, ^1 would round up the nearest full value)</label>
+                            <label>Final value formula</label>
+                            <comment>Apply this formula to the final price (eg: +1 would add $1, *1.1 would add 10%, ^1 would round up the nearest full value)</comment>
+                            <label></label>
                             <frontend_type>textarea</frontend_type>
                             <sort_order>92</sort_order>
                             <show_in_default>1</show_in_default>
