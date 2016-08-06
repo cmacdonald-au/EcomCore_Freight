@@ -121,14 +121,14 @@ class EcomCore_Freight_Model_Estimate
             }
 
             $result = $this->getQuote()->addProduct($product, $request);
-        }
 
-        if (is_string($result)) {
-            Mage::throwException($result);
-        }
+            if (is_string($result)) {
+                Mage::throwException($result);
+            }
 
-        Mage::dispatchEvent('checkout_cart_product_add_after',
-                            array('quote_item' => $result, 'product' => $product));
+            Mage::dispatchEvent('checkout_cart_product_add_after',
+                                array('quote_item' => $result, 'product' => $product));
+        }
 
         $this->getQuote()->collectTotals();
         $this->result = $shippingAddress->getGroupedAllShippingRates();

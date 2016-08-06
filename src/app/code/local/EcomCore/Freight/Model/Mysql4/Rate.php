@@ -159,7 +159,6 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
 
             }
         }
-        Mage::log(var_export($newdata, true));
         return $newdata;
     }
 

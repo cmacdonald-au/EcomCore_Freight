@@ -24,17 +24,24 @@
  */
 class EcomCore_Freight_IndexController extends Mage_Core_Controller_Front_Action
 {
+
     public function indexAction() {
 
         $skuList = $this->getRequest()->getParam('p');
         $dest    = $this->getRequest()->getParam('d');
         $render  = $this->getRequest()->getParam('r');
+        $output  = $this->getRequest()->getParam('o');
+        $target  = $this->getRequest()->getParam('t');
 
-        if (empty($skuList)) {
-            return false;
+        if ($output == 'js') {
+        	$render = 1;
+        	if (!empty($target)) {
+        		$target = preg_replace('/[^0-9a-zA-Z\._\-]/', '', $target);
+        	} else {
+        		$target = 'shippingCost';
+        	}
         }
 
-        $skuList = explode(';', $skuList);
         if (empty($skuList)) {
             return false;
         }
@@ -43,13 +50,42 @@ class EcomCore_Freight_IndexController extends Mage_Core_Controller_Front_Action
             return false;
         }
 
-        $region   = Mage::helper('eccfreight/data')->getRegion($dest, 'AU');
+        $skuList = json_decode($skuList, true);
+        if ($skuList === false || empty($skuList)) {
+        	$skuList = array($this->getRequest()->getParam('p'));
+        }
+        if (empty($skuList)) {
+        	return false;
+        }
+
+        $destData = json_decode($dest);
+        if ($destData === false || empty($destData)) {
+        	return false;
+        }
+        if (is_int($destData)) {
+        	//single vals = postcodes
+	        $region   = Mage::helper('eccfreight/data')->getRegion($destData, 'AU');
+        	$destData = array('country_id'=>'AU', 'postcode'=>$destData, 'region_id'=>$region['region_id']);
+        } else if (is_object($destData)) {
+        	$destData = (array)$destData;
+        }
+
+        if (isset($destData['region']) && false == isset($destData['region_id'])) {
+        	$region   = Mage::helper('eccfreight/data')->getRegion($destData['postcode'], $destData['country_id']);
+        	$destData['region_id'] = $region['region_id'];
+        }
+
         $estimate = Mage::getModel('eccfreight/estimate');
         $estimate->setProducts($skuList);
-        $estimate->setDestination(array('country_id'=>'AU', 'postcode'=>$dest, 'region_id'=>$region['region_id']));
+        $estimate->setDestination($destData);
         $rates = $estimate->getRates();
 
-        $cheapestRate = array('price' => null, 'name' => '');
+        if ($render == 1) {
+	        $cheapestRate = array('price' => null, 'name' => '');
+        } else {
+        	$rateList     = array();
+        }
+
         foreach ($rates as $code => $rate) {
             foreach ($rate as $option) {
                 if ($option->getErrorMessage()) {
@@ -62,13 +98,23 @@ class EcomCore_Freight_IndexController extends Mage_Core_Controller_Front_Action
                         $cheapestRate['name']  = $option->getMethodTitle();
                     }
                 } else {
-                    print $option->getMethodTitle().': '.$option->getPrice().'<br />';
+                    $rateList[$option->getMethodTitle()] = $option->getPrice();
                 }
             }
         }
 
         if ($render == 1) {
-            print $cheapestRate['name'].' : '.$cheapestRate['price']."<br />";
+        	if ($output == 'js') {
+        		$outputData = $cheapestRate['price'];
+        		if ($outputData == 0) {
+        			$outputData = 'FREE';
+        		}
+	            print 'document.getElementById("'.$target.'").innerText = "$'.$outputData.'";';
+        	} else {
+	            print $cheapestRate['name'].': '.$cheapestRate['price']."<br />";
+	        }
+        } else {
+        	print json_encode($rateList);
         }
 
     }

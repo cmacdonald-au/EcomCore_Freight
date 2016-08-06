@@ -38,6 +38,8 @@ class EcomCore_Freight_Model_Rate
      */
     protected $_code = 'eccfreight';
 
+    public static $rateResults = array();
+
     /**
      * @var string
      */
@@ -52,6 +54,7 @@ class EcomCore_Freight_Model_Rate
         foreach ($this->getCode('condition_name') as $k=>$v) {
             $this->_conditionNames[] = $k;
         }
+        self::$rateResults = array();
     }
 
     public function collectRates(Mage_Shipping_Model_Rate_Request $request)
@@ -74,10 +77,11 @@ class EcomCore_Freight_Model_Rate
             foreach ($rates as $rate) {
                 if (!empty($rate) && $rate['price'] >= 0) {
                     /** @var Mage_Shipping_Model_Rate_Result_Method $method */
-                    $method = Mage::getModel('shipping/rate_result_method');
+                    $method = Mage::getModel('eccfreight/rate_result_method');
 
                     $method->setCarrier('eccfreight');
                     $method->setCarrierTitle($this->getConfigData('title'));
+                    $method->setAdjustmentRules($rate['adjustment_rules']);
 
                     if ($rate['carrier_code']) {
                         $methodCode = strtolower(str_replace(' ', '_', $rate['carrier_code']));
@@ -112,6 +116,7 @@ class EcomCore_Freight_Model_Rate
 
                     $method->setPrice($shippingPrice);
                     $method->setDeliveryType($rate['delivery_group']);
+                    self::$rateResults[$methodCode] = $method;
 
                     $result->append($method);
                 }

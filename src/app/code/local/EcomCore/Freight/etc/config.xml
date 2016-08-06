@@ -52,6 +52,7 @@
             <eccfreight_setup>
                 <setup>
                     <module>EcomCore_Freight</module>
+                    <class>EcomCore_Freight_Entity_Setup</class>
                 </setup>
                 <connection>
                     <use>directory_setup</use>
