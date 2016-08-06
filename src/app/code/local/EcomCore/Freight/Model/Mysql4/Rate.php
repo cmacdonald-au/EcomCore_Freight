@@ -44,10 +44,10 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
         $table    = $this->getMainTable();
         $storeId  = $request->getStoreId();
 
-        Mage::log($request->getDestCountryId());
-        Mage::log($request->getDestRegionId());
-        Mage::log($postcode);
-        Mage::log(var_export($request->getConditionName(), true));
+        // Mage::log($request->getDestCountryId());
+        // Mage::log($request->getDestRegionId());
+        // Mage::log($postcode);
+        // Mage::log(var_export($request->getConditionName(), true));
 
         for ($j = 0; $j < 5; $j++) {
 
@@ -105,9 +105,11 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
             $select->order('weight_from DESC');
 
             $newdata=array();
-            Mage::log($select->__toString());
+            // Mage::log($select->__toString());
             $row = $read->fetchAll($select);
             if (!empty($row) && ($j < 5)) {
+                // We keep trying until we get a result, or run out of generic queries.
+                // the most generic query clause in the above switch statement will be in effect when $j == 4
 
                 foreach ($row as $data) {
 
@@ -139,6 +141,7 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
                                         if ($item['weight'] > $data['increment_weight']) {
                                             $increments = floor($item['weight']/$data['increment_weight']);
                                         }
+
                                         Mage::log(__METHOD__.'() Adding 1 unit @ $'.$data['basic_price'].' plus ('.$increments.' * '.$data['price_per_increment'].')');
                                         $price += (float)($data['basic_price']) + ($increments * $data['price_per_increment']);
                                     }
@@ -148,7 +151,7 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
 
                         $data['price'] = (float)$price;
                         Mage::log(__METHOD__.'() Rate set: '.json_encode($data, true));
-                        $newdata[]=$data;
+                        $newdata[] = $data;
 
                     } catch (Exception $e) {
                         Mage::log($e->getMessage());
