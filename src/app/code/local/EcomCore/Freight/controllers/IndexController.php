@@ -79,7 +79,7 @@ class EcomCore_Freight_IndexController extends Mage_Core_Controller_Front_Action
         $estimate = Mage::getModel('eccfreight/estimate');
         $estimate->setProducts($skuList);
         $estimate->setDestination($destData);
-        $rates = $estimate->getRates();
+        $estimate->process();
 
         if ($render == 1) {
 	        $cheapestRate = array('price' => null, 'name' => '');
@@ -87,7 +87,7 @@ class EcomCore_Freight_IndexController extends Mage_Core_Controller_Front_Action
         	$rateList     = array();
         }
 
-        foreach ($rates as $code => $rate) {
+        foreach ($estimate->result as $code => $rate) {
             foreach ($rate as $option) {
                 if ($option->getErrorMessage()) {
                     continue;

@@ -7,7 +7,7 @@ class EcomCore_Freight_Model_Estimate
     protected $products = array();
     public    $result;
 
-    public $address = array(
+    public $destination = array(
         'country_id' => '',
         'region_id'  => '',
         'postcode'   => '',
@@ -29,11 +29,11 @@ class EcomCore_Freight_Model_Estimate
         }
     }
 
-    public function setDestination($addressInfo)
+    public function setDestination($destData)
     {
-        foreach ($addressInfo as $k => $v) {
-            if (array_key_exists($k, $this->address)) {
-                $this->address[$k] = $v;
+        foreach ($destData as $k => $v) {
+            if (array_key_exists($k, $this->destination)) {
+                $this->destination[$k] = $v;
             }
         }
     }
@@ -77,7 +77,7 @@ class EcomCore_Freight_Model_Estimate
      *
      * @return EcomCore_Freight_Model_Estimate
      */
-    public function getRates()
+    public function process()
     {
         if ($this->existingCart) {
             $this->resetQuote();
@@ -85,22 +85,22 @@ class EcomCore_Freight_Model_Estimate
 
         $shippingAddress = $this->getQuote()->getShippingAddress();
 
-        $shippingAddress->setCountryId($this->address['country_id']);
+        $shippingAddress->setCountryId($this->destination['country_id']);
 
-        if (!empty($this->address['region_id'])) {
-            $shippingAddress->setRegionId($this->address['region_id']);
+        if (!empty($this->destination['region_id'])) {
+            $shippingAddress->setRegionId($this->destination['region_id']);
         }
 
-        if (!empty($this->address['postcode'])) {
-            $shippingAddress->setPostcode($this->address['postcode']);
+        if (!empty($this->destination['postcode'])) {
+            $shippingAddress->setPostcode($this->destination['postcode']);
         }
 
-        if (!empty($this->address['region'])) {
-            $shippingAddress->setRegion($this->address['region']);
+        if (!empty($this->destination['region'])) {
+            $shippingAddress->setRegion($this->destination['region']);
         }
 
-        if (!empty($this->address['city'])) {
-            $shippingAddress->setCity($this->address['city']);
+        if (!empty($this->destination['city'])) {
+            $shippingAddress->setCity($this->destination['city']);
         }
 
         $shippingAddress->setData('collect_shipping_rates',true);
@@ -132,7 +132,6 @@ class EcomCore_Freight_Model_Estimate
 
         $this->getQuote()->collectTotals();
         $this->result = $shippingAddress->getGroupedAllShippingRates();
-
-        return $this->result;
+        return $this;
     }    
 }
