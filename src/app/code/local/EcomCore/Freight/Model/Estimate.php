@@ -73,6 +73,25 @@ class EcomCore_Freight_Model_Estimate
     }     
 
     /**
+     * Retrieve currently logged in customer,
+     * if customer isn't logged it returns false
+     *
+     * @return Mage_Customer_Model_Customer|boolean
+     */
+    public function getCustomer()
+    {
+        if ($this->_customer === null) {
+            $customerSession = Mage::getSingleton('customer/session');
+            if ($customerSession->isLoggedIn()) {
+                $this->_customer = $customerSession->getCustomer();
+            } else {
+                $this->_customer = false;
+            }
+        }
+        return $this->_customer;
+    }
+
+    /**
      * Retrieve list of shipping rates
      *
      * @return EcomCore_Freight_Model_Estimate

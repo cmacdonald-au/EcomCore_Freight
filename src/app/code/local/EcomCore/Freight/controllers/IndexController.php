@@ -64,7 +64,7 @@ class EcomCore_Freight_IndexController extends Mage_Core_Controller_Front_Action
         	return false;
         }
         if (is_int($destData)) {
-        	//single vals = postcodes
+        	//single val = postcode
 	        $region   = Mage::helper('eccfreight/data')->getRegion($destData, 'AU');
         	$destData = array('country_id'=>'AU', 'postcode'=>$destData, 'region_id'=>$region['region_id']);
         } else if (is_object($destData)) {
@@ -72,7 +72,7 @@ class EcomCore_Freight_IndexController extends Mage_Core_Controller_Front_Action
         }
 
         if (isset($destData['region']) && false == isset($destData['region_id'])) {
-        	$region   = Mage::helper('eccfreight/data')->getRegion($destData['postcode'], $destData['country_id']);
+        	$region = Mage::helper('eccfreight/data')->getRegion($destData['postcode'], $destData['country_id']);
         	$destData['region_id'] = $region['region_id'];
         }
 
