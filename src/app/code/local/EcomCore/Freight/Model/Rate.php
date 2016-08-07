@@ -49,17 +49,16 @@ class EcomCore_Freight_Model_Rate
 
     public function __construct()
     {
-        Mage::log(__METHOD__.'() Starting');
         parent::__construct();
         foreach ($this->getCode('condition_name') as $k=>$v) {
             $this->_conditionNames[] = $k;
         }
-        self::$rateResults = array();
     }
 
     public function collectRates(Mage_Shipping_Model_Rate_Request $request)
     {
 
+        self::$rateResults = array();
         if (!$this->getConfigFlag('active')) {
             Mage::log(__METHOD__.'() Module disabled');
             return false;
@@ -220,4 +219,67 @@ class EcomCore_Freight_Model_Rate
         return $result;
     }
 
+    public static function isEbayRequest()
+    {
+        if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
+            if (stripos('ebay.com', $_SERVER['HTTP_REFERER']) !== false) {
+                return true;
+            }
+        }
+        $req = Mage::app()->getRequest();
+        if (strtolower($req->getParam('mode')) == 'ebay') {
+            return true;
+        }
+    }
+
+    public static function applyAdjustments(Mage_Sales_Model_Quote_Address_Rate $rate)
+    {
+        if (empty(self::$rateResults)) {
+            return;
+        }
+        if (false === isset(self::$rateResults[$rate->getMethod()])) {
+            return;
+        }
+        $adjustments = self::$rateResults[$rate->getMethod()]['adjustment_rules'];
+        if (empty($adjustments)) {
+            return;
+        }
+
+        $currentPrice = $rate->getPrice();
+        $adjustments = explode(';', $adjustments);
+        foreach ($adjustments as $adjustment) {
+            $adjustment = explode(':', $adjustment);
+            if ($adjustment[0] == 'ebay' && self::isEbayRequest()) {
+                $adjustmentValue = self::getAdjustmentAmount($adjustment[1], $currentPrice);
+                $currentPrice = $currentPrice+$adjustmentValue;
+                break;
+            }
+        }
+
+        $rate->setPrice(number_format($currentPrice, 2));
+    }
+
+    protected static function getAdjustmentAmount($rule, $price)
+    {
+
+        $modifier = 1; // Are we going for a surcharge (+) or a discount (-). Default is surcharge
+
+        $sign = substr($rule, 0, 1);
+        if ($sign == '-') {
+            $modifier = -1;
+            $rule = substr($rule, 1);
+        } else if ($sign == '+') {
+            $rule = substr($rule, 1);
+        }
+
+        $type = substr($rule, -1);
+        if ($type == '%') {
+            $rule  = substr($rule, 0, -1);
+            $pctval = ($price/100)*$rule;
+            return ($pctval*$modifier);
+        } else {
+            return ($rule*$modifier);
+        }
+
+    }
 }

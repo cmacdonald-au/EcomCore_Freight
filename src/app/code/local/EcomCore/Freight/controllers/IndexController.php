@@ -25,7 +25,8 @@
 class EcomCore_Freight_IndexController extends Mage_Core_Controller_Front_Action
 {
 
-    public function indexAction() {
+    public function indexAction()
+    {
 
         $skuList = $this->getRequest()->getParam('p');
         $dest    = $this->getRequest()->getParam('d');
@@ -92,13 +93,22 @@ class EcomCore_Freight_IndexController extends Mage_Core_Controller_Front_Action
                     continue;
                 }
 
+                if ($option->getCarrier() == 'eccfreight') {
+                	if (!empty(EcomCore_Freight_Model_Rate::$rateResults)) {
+                		EcomCore_Freight_Model_Rate::applyAdjustments($option);
+                	}
+                }
+
+                $price = $option->getPrice();
+                $name  = $option->getMethodTitle();
+
                 if ($render == 1) {
-                    if ($cheapestRate['price'] === null || $option->getPrice() < $cheapestRate['price']) {
-                        $cheapestRate['price'] = $option->getPrice();
-                        $cheapestRate['name']  = $option->getMethodTitle();
+                    if ($cheapestRate['price'] === null || $price < $cheapestRate['price']) {
+                        $cheapestRate['price'] = $price;
+                        $cheapestRate['name']  = $name;
                     }
                 } else {
-                    $rateList[$option->getMethodTitle()] = $option->getPrice();
+                    $rateList[$name] = $price;
                 }
             }
         }

@@ -5,7 +5,7 @@ class EcomCore_Freight_Model_Estimate
 
     protected $quote;
     protected $products = array();
-    public $result;
+    public    $result;
 
     public $address = array(
         'country_id' => '',
