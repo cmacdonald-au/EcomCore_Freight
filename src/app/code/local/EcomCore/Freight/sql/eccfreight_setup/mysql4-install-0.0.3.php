@@ -42,7 +42,7 @@ CREATE TABLE {$this->getTable('eccfreight_rates')} (
   `price_per_increment` decimal(12,4) NOT NULL default '0.0000',
   `increment_weight` decimal(12,4) NOT NULL default '0.0000',
   `price_per_article` decimal(12,4) NOT NULL default '0.0000',
-  `consignment_allowed` tinyint NOT NULL default 1,
+  `consignment_option` tinyint NOT NULL default 0,
   `maxkg_per_consigment` decimal(12,4) NOT NULL default '0.0000',
   `cap` decimal(12,4) DEFAULT NULL,
   `surcharge` varchar(12) DEFAULT NULL,

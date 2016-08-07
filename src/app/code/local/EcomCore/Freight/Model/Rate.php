@@ -226,6 +226,7 @@ class EcomCore_Freight_Model_Rate
                 return true;
             }
         }
+
         $req = Mage::app()->getRequest();
         if (strtolower($req->getParam('mode')) == 'ebay') {
             return true;

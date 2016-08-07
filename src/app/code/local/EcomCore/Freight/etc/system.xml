@@ -104,15 +104,15 @@
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
                         </weightunits>
-                        <cubiccalc>
-                            <label>Override default cubic weight calc</label>
-                            <comment>Default cubic formula is (L*W*H)*250 where the dimensions are meters</comment>
-                            <frontend_type>text</frontend_type>
+                        <cubicattribute>
+                            <label>Cubic weight attribute</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>eccfreight/config_attribute</source_model>
                             <sort_order>3</sort_order>
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
-                        </cubiccalc>
+                        </cubicattribute>
                         <shippingclasses>
                             <label>Shipping classes</label>
                             <frontend_type>textarea</frontend_type>

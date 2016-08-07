@@ -44,6 +44,8 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
         $table    = $this->getMainTable();
         $storeId  = $request->getStoreId();
 
+        $totalWeight = $request->getPackageWeight();
+
         // Mage::log($request->getDestCountryId());
         // Mage::log($request->getDestRegionId());
         // Mage::log($postcode);
@@ -86,17 +88,10 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
                     break;
             }
 
-            if (is_array($request->getConditionName())) {
-                $i = 0;
-                foreach ($request->getConditionName() as $conditionName) {
-                    $select->where('weight_from<=?', $request->getData($conditionName));
-                    $select->where('weight_to>=?', $request->getData($conditionName));
-                    $i++;
-                }
-            } else {
-                $select->where('weight_from<=?', $request->getData($request->getConditionName()));
-                $select->where('weight_to>=?', $request->getData($request->getConditionName()));
-            }
+            /** This needs to be genericised. Product mix can indicate mixed-rates apply, so some rates would be **/
+            $select->where('weight_from<=?', $totalWeight);
+            $select->where('weight_to>=?', $totalWeight);
+
             $select->where('website_id=?', $request->getWebsiteId());
 
             $select->order('dest_country_id DESC');
@@ -130,23 +125,55 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
                                 // Simple one - the rates have already been set for this product
                                 $price += $values['charge'];
                             } else {
-                                if ($data['consignment_allowed'] == 1) {
+                                if ($data['consignment_option'] == 1) {
+                                    Mage::Log(__METHOD__.'() Calculating rates as a consignment');
                                     $price = (float)($data['price']);
                                     if ($values['weight'] > $data['increment_weight']) {
-                                        $increments = $values['weight']%$data['increment_weight'];
+                                        $increments = (floor($values['weight']/$data['increment_weight'])-1);
                                     }
                                     $price += $increments * $data['price_per_increment'];
-                                } else {
+
+                                    Mage::Log(__METHOD__.'() Basic rate: '.$data['price'].' plus '.$increments.' @ '.$data['price_per_increment'].' each (~'.$data['increment_weight'].'kg), wi '.$values['units'].' units for a total weight of '.$values['weight']);
+
+                                } else if ($data['consignment_option'] == 2) {
+
+                                    Mage::Log(__METHOD__.'() Calculating rates per-line');
+                                    $price = 0;
                                     foreach ($values['item_data'] as $item) {
-                                        if ($item['weight'] > $data['increment_weight']) {
-                                            $increments = floor($item['weight']/$data['increment_weight']);
+                                        $itemWeight = ($item['weight']*$item['units']);
+                                        $price += (float)($data['price']);
+                                        $increments = 0;
+                                        if ($itemWeight > $data['increment_weight']) {
+                                            $increments = (floor($itemWeight/$data['increment_weight'])-1);
                                         }
 
-                                        Mage::log(__METHOD__.'() Adding 1 unit @ $'.$data['basic_price'].' plus ('.$increments.' * '.$data['price_per_increment'].')');
-                                        $price += (float)($data['basic_price']) + ($increments * $data['price_per_increment']);
+                                        if ($increments > 0) {
+                                            $price += $increments * $data['price_per_increment'];
+                                        }
+
+                                        Mage::Log(__METHOD__.'() Basic rate: '.$data['price'].' plus '.$increments.' @ '.$data['price_per_increment'].' each (~'.$data['increment_weight'].'kg), across '.$item['units'].' units for a total weight of '.$itemWeight);
+
                                     }
-                                }
-                            }
+                                } else {
+                                    Mage::Log(__METHOD__.'() Calculating rates per-unit');
+                                    $price = 0;
+                                    foreach ($values['item_data'] as $item) {
+                                        $unitPrice = (float)($data['price']);
+                                        $increments = 0;
+                                        if ($item['weight'] > $data['increment_weight']) {
+                                            $increments = (floor($item['weight']/$data['increment_weight'])-1);
+                                        }
+
+                                        if ($increments > 0) {
+                                            $unitPrice += $increments * $data['price_per_increment'];
+                                        }
+
+                                        $price += $unitPrice*$item['units'];
+
+                                        Mage::Log(__METHOD__.'() Basic rate: '.$data['price'].' plus '.$increments.' @ '.$data['price_per_increment'].' each (~'.$data['increment_weight'].'kg), per unit, for '.$item['units'].' units for a total weight of '.$item['weight']);
+
+                                    }
+                                }                            }
                         }
 
                         $data['price'] = (float)$price;
@@ -172,6 +199,10 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
         $numParcels = $request->getPackageQty();
 
         $shippingClassRules = $this->getConfigValue('shippingclasses');
+        $cubicAttribute     = $this->getConfigValue('cubicattribute');
+        if ($cubicAttribute) {
+            $cubicAttribute = Mage::getModel('eav/entity_attribute')->load($cubicAttribute)->getAttributeCode();
+        }
 
         $itemSummary = array(
             'standard' => array('units' => 0, 'weight' => 0),
@@ -182,17 +213,25 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
         foreach ($items as $item) {
             $parcelCount++;
             $productId = $item->getProductId();
-            $product   = Mage::getModel('catalog/product')->load($productId);
+            $product   = $item->getProduct();
 
             $unitCount  = $item->getQty();
             $unitWeight = $item->getWeight();
+            $unitCubic  = 0;
+
+            if ($cubicAttribute) {
+                $unitCubic  = $product->getData($cubicAttribute);
+                Mage::Log(__METHOD__.'() Product has cubic weight of '.$unitCubic);
+            }
+
+            $chargeWeight = max($unitCubic, $unitWeight);
 
             $shipClass = 'standard';
             if (!empty($shippingClassRules)) {
                 $shipClass = $product->getAttributeText('shipping_class');
-                Mage::log(__METHOD__.'() #'.$itemNumber.' {'.$unitCount.' X '.$unitWeight.'} shipClass override: `'.$shipClass.'`');
+                Mage::log(__METHOD__.'() #'.$itemNumber.' {'.$unitCount.' X '.$chargeWeight.'} shipClass override: `'.$shipClass.'`');
                 if (empty($shipClass)) {
-                    if ($unitWeight >= 5) {
+                    if ($chargeWeight >= 5) {
                         $shipClass = 'large';
                     } else {
                         $shipClass = 'small';
@@ -200,9 +239,9 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
                 }
             }
 
-            $itemSummary[$shipClass]['weight'] += ($unitWeight*$unitCount);
+            $itemSummary[$shipClass]['weight'] += ($chargeWeight*$unitCount);
             $itemSummary[$shipClass]['units']  += $unitCount;
-            $itemSummary[$shipClass]['item_data'][] = array('weight' => $unitWeight, 'units' => $unitCount);
+            $itemSummary[$shipClass]['item_data'][] = array('weight' => $chargeWeight, 'units' => $unitCount);
 
             if ($shipClass == 'fixed') {
                 $itemSummary[$shipClass]['charge'] += ($product->getShippingFlatrate()*$item->getQty());
@@ -219,8 +258,6 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
                     $itemSummary['capped'][$capClass.'-'.$capRate] = array('units' => 0, 'charge' => $capRate);
                 }
                 $itemSummary['capped'][$capClass.'-'.$capRate]['units'] += $unitCount;
-            } else {
-                $itemSummary[$shipClass]['units']  += $unitCount;
             }
             $itemNumber++;
         }

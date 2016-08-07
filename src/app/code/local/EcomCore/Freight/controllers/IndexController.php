@@ -28,11 +28,12 @@ class EcomCore_Freight_IndexController extends Mage_Core_Controller_Front_Action
     public function indexAction()
     {
 
-        $skuList = $this->getRequest()->getParam('p');
-        $dest    = $this->getRequest()->getParam('d');
-        $render  = $this->getRequest()->getParam('r');
-        $output  = $this->getRequest()->getParam('o');
-        $target  = $this->getRequest()->getParam('t');
+
+        $skuList = $this->getRequest()->getParam('p'); // (string)<sku> or (json){<sku>:[qty];<sku>:[qty][;<sku>:qty...]} qty will default to 1 if unspecified
+        $dest    = $this->getRequest()->getParam('d'); // (int)<postcode> or (json){postcode:<postcode>;country_id:<country_id>;...}
+        $render  = $this->getRequest()->getParam('r'); // optional (int)1 render 1 or all
+        $output  = $this->getRequest()->getParam('o'); // optional (string)"js" render javascript block
+        $target  = $this->getRequest()->getParam('t'); // optional (string) element id for javascript output to set innerText
 
         if ($output == 'js') {
         	$render = 1;
@@ -53,11 +54,10 @@ class EcomCore_Freight_IndexController extends Mage_Core_Controller_Front_Action
 
         $skuList = json_decode($skuList, true);
         if ($skuList === false || empty($skuList)) {
-        	$skuList = array($this->getRequest()->getParam('p'));
+        	$qty = max($this->getRequest()->getParam('q'), 1);
+        	$skuList = array($this->getRequest()->getParam('p') => $qty);
         }
-        if (empty($skuList)) {
-        	return false;
-        }
+        Mage::log(__METHOD__.'() Processing for SKU list '.json_encode($skuList));
 
         $destData = json_decode($dest);
         if ($destData === false || empty($destData)) {

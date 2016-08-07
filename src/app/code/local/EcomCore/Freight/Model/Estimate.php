@@ -21,10 +21,10 @@ class EcomCore_Freight_Model_Estimate
     public function setProducts($skuList)
     {
         $this->products = array();
-        foreach ($skuList as $sku) {
+        foreach ($skuList as $sku => $qty) {
             $product = Mage::helper('catalog/product')->getProduct($sku, $this->getQuote()->getStoreId());
             if ($product->hasData()) {
-                $this->products[] = $product;
+                $this->products[] = array('qty' => $qty, 'product' => $product);
             }
         }
     }
@@ -128,9 +128,9 @@ class EcomCore_Freight_Model_Estimate
             $this->getQuote()->setCouponCode($this->coupon_code);
         }
 
-        foreach ($this->products as $product) {
-            $addToCartInfo = (array) $product->getAddToCartInfo();
-            $request = new Varien_Object($addToCartInfo); 
+        foreach ($this->products as $p) {
+            $request = new Varien_Object(array('qty' => $p['qty'])); 
+            $product = $p['product'];
 
             if ($product->getStockItem()) {
                 $minimumQty = $product->getStockItem()->getMinSaleQty();
