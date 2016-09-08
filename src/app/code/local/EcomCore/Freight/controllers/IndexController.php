@@ -27,8 +27,6 @@ class EcomCore_Freight_IndexController extends Mage_Core_Controller_Front_Action
 
     public function indexAction()
     {
-
-
         $idList  = $this->getRequest()->getParam('i'); // (string)<id> or (json){<id>:[qty];<id>:[qty][;<id>:qty...]} qty will default to 1
         $skuList = $this->getRequest()->getParam('p'); // (string)<sku> or (json){<sku>:[qty];<sku>:[qty][;<sku>:qty...]} qty will default to 1 if unspecified
         $dest    = $this->getRequest()->getParam('d'); // (int)<postcode> or (json){postcode:<postcode>;country_id:<country_id>;...}
@@ -55,9 +53,15 @@ class EcomCore_Freight_IndexController extends Mage_Core_Controller_Front_Action
 
         if (!empty($skuList)) {
             $productList = json_decode($skuList, true);
+            if ($productList === null) {
+                $productList = $this->getRequest()->getParam('p');
+            }
             $listType = EcomCore_Freight_Model_Estimate::PLISTTYPE_SKU;
         } else if (!empty($idList)) {
             $productList = json_decode($idList, true);
+            if ($productList === null) {
+                $productList = $this->getRequest()->getParam('i');
+            }
             $listType = EcomCore_Freight_Model_Estimate::PLISTTYPE_ID;
         }
 
@@ -89,56 +93,25 @@ class EcomCore_Freight_IndexController extends Mage_Core_Controller_Front_Action
         }
 
         Mage::log(__METHOD__.'() Getting shipping estimates for '.json_encode($productList).' ['.$listType.']');
-        $estimate = Mage::getModel('eccfreight/estimate');
-        $estimate->setProducts($productList, $listType);
-        $estimate->setDestination($destData);
-        $estimate->process();
+
+        $estimate = Mage::helper('eccfreight/rate')->getEstimate($productList, $listType, $destData);
+
         Mage::log(__METHOD__.'() Processed. Got '.count($estimate->result).' options');
 
-        if ($render == 1) {
-	        $cheapestRate = array('price' => null, 'name' => '');
-        } else {
-        	$rateList     = array();
-        }
-
-        foreach ($estimate->result as $code => $rate) {
-            foreach ($rate as $option) {
-                if ($option->getErrorMessage()) {
-                    continue;
-                }
-
-                if ($option->getCarrier() == 'eccfreight') {
-                	if (!empty(EcomCore_Freight_Model_Rate::$rateResults)) {
-                		EcomCore_Freight_Model_Rate::applyAdjustments($option);
-                	}
-                }
-
-                $price = $option->getPrice();
-                $name  = $option->getMethodTitle();
-
-                if ($render == 1) {
-                    if ($cheapestRate['price'] === null || $price < $cheapestRate['price']) {
-                        $cheapestRate['price'] = $price;
-                        $cheapestRate['name']  = $name;
-                    }
-                } else {
-                    $rateList[$name] = $price;
-                }
-            }
-        }
+        $rates = Mage::helper('eccfreight/rate')->extractRateData($estimate);
 
         if ($render == 1) {
         	if ($output == 'js') {
-        		$outputData = $cheapestRate['price'];
+        		$outputData = $rates['cheapest']['price'];
         		if ($outputData == 0) {
         			$outputData = 'FREE';
         		}
 	            print 'document.getElementById("'.$target.'").innerText = "$'.$outputData.'";';
         	} else {
-	            print $cheapestRate['name'].': '.$cheapestRate['price']."<br />";
+	            print $rates['cheapest']['name'].': '.$rates['cheapest']['price']."<br />";
 	        }
         } else {
-        	print json_encode($rateList);
+        	print json_encode($rates['list']);
         }
 
     }

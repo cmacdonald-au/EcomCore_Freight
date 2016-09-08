@@ -8,6 +8,7 @@ class EcomCore_Freight_Model_Estimate
 
     protected $quote;
     protected $products = array();
+    protected $customer;
     public    $result;
 
     public $destination = array(
@@ -61,10 +62,12 @@ class EcomCore_Freight_Model_Estimate
     public function getQuote()
     {
         if ($this->quote === null) {
-            if ($this->existingCart) {
-                $this->quote = Mage::getSingleton('checkout/type_onepage')->getQuote();
+            $quote = Mage::getSingleton('checkout/type_onepage')->getQuote();
+            if ($quote->hasData()) {
+                $this->existingCart = true;
+                $this->quote = $quote;
             } else {
-                $this->quote = Mage::getSingleton('checkout/type_onepage')->getQuote();//Mage::getModel('sales/quote');
+                $this->quote = $quote;
             }
         }
 
@@ -95,15 +98,15 @@ class EcomCore_Freight_Model_Estimate
      */
     public function getCustomer()
     {
-        if ($this->_customer === null) {
+        if ($this->customer === null) {
             $customerSession = Mage::getSingleton('customer/session');
             if ($customerSession->isLoggedIn()) {
-                $this->_customer = $customerSession->getCustomer();
+                $this->customer = $customerSession->getCustomer();
             } else {
-                $this->_customer = false;
+                $this->customer = false;
             }
         }
-        return $this->_customer;
+        return $this->customer;
     }
 
     /**

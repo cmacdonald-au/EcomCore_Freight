@@ -129,10 +129,17 @@ class EcomCore_Freight_Model_Rate
         }
 
         $otherRates = $this->extend($request, $result);
-        $allRates = array_merge(self::$rateResults, $otherRates);
+        foreach ($otherRates as $rate) {
+            self::$rateResults[$rate->getMethod()] = $rate;
+        }
+
+        $allRates = self::$rateResults;
         $finalRates = array();
         foreach ($allRates as $method) {
             if (false === isset($finalRates[$method->getMethodTitle()]) || $method->getPrice() < $finalRates[$method->getMethodTitle()]->getPrice()) {
+                if (isset($finalRates[$method->getMethodTitle()])) {
+                    Mage::log(__METHOD__.'() Replacing existing rate `'.$method->getMethodTitle().'` ($'.$finalRates[$method->getMethodTitle()]->getPrice().') with new rate ($'.$method->getPrice().') '.json_encode($method->toArray()));
+                }
                 $method->setCarrier('eccfreight');
                 $finalRates[$method->getMethodTitle()] = $method;
             }
@@ -274,20 +281,25 @@ class EcomCore_Freight_Model_Rate
         if (empty(self::$rateResults)) {
             return;
         }
-        if (false === isset(self::$rateResults[$rate->getMethod()])) {
+
+        if (false === isset(self::$rateResults[$rate->getMethod()]) || is_object(self::$rateResults[$rate->getMethod()]) === false) {
             return;
         }
-        $adjustments = self::$rateResults[$rate->getMethod()]['adjustment_rules'];
-        if (empty($adjustments)) {
+
+        $rateAdjustments   = self::$rateResults[$rate->getMethod()]->adjustment_rules;
+        $globalAdjustments = Mage::getModel('eccfreight/rate')->getConfigData('globalAdjustments');
+        if (empty($rateAdjustments) && empty($globalAdjustments)) {
             return;
         }
 
         $currentPrice = $rate->getPrice();
-        $adjustments = explode(';', $adjustments);
-        foreach ($adjustments as $adjustment) {
-            $adjustment = explode(':', $adjustment);
+        $adjustments = array_merge(explode(';', $rateAdjustments), explode(';', $globalAdjustments));
+
+        foreach ($adjustments as $adjustmentRule) {
+            $adjustment = explode(':', $adjustmentRule);
             if ($adjustment[0] == 'ebay' && self::isEbayRequest()) {
                 $adjustmentValue = self::getAdjustmentAmount($adjustment[1], $currentPrice);
+                Mage::log(__METHOD__.'() Adjusting price by '.$adjustmentValue.' (from: '.$currentPrice.', to: '.($currentPrice+$adjustmentValue).') due to adjustment rule `'.$adjustmentRule.'`');
                 $currentPrice = $currentPrice+$adjustmentValue;
                 break;
             }

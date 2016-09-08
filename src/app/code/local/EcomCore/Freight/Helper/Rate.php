@@ -146,4 +146,48 @@ class EcomCore_Freight_Helper_Rate extends Mage_Core_Helper_Abstract
 
         return false;
     }
+
+    public function getEstimate($productList, $listType, $destData)
+    {
+        $estimate = Mage::getModel('eccfreight/estimate');
+        $estimate->setProducts($productList, $listType);
+        $estimate->setDestination($destData);
+        $estimate->process();
+
+        return $estimate;
+    }
+
+    public function extractRateData($estimate)
+    {
+        $data = array(
+            'list'     => array(),
+            'cheapest' => array('price' => null, 'name' => ''),
+        );
+        foreach ($estimate->result as $code => $rate) {
+            foreach ($rate as $option) {
+                if ($option->getErrorMessage()) {
+                    continue;
+                }
+
+                if ($option->getCarrier() == 'eccfreight') {
+                    if (!empty(EcomCore_Freight_Model_Rate::$rateResults)) {
+                        EcomCore_Freight_Model_Rate::applyAdjustments($option);
+                    }
+                }
+
+                $price = $option->getPrice();
+                $name  = $option->getMethodTitle();
+
+                if ($data['cheapest']['price'] === null || $price < $data['cheapest']['price']) {
+                    $data['cheapest']['price'] = $price;
+                    $data['cheapest']['name']  = $name;
+                }
+
+                $data['list'][$name] = $price;
+            }
+        }
+
+        return $data;
+    }
+
 }
