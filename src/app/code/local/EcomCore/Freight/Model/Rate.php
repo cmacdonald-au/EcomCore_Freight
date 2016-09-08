@@ -97,7 +97,12 @@ class EcomCore_Freight_Model_Rate
 
                     $method->setMethodChargeCode($rate['carrier_code']);
 
+                    if (isset($rate['min_charge']) && $rate['min_charge'] > 0 && $rate['min_charge'] > $rate['price']) {
+                        $rate['price'] = $rate['min_charge'];
+                    }
+
                     $shippingPrice = $this->getFinalPriceWithHandlingFee($rate['price']);
+
                     if (isset($rate['surcharge']) && !empty($rate['surcharge'])) {
                         if (strpos($rate['surcharge'], '%') !== false) {
                             $rate['surcharge'] = str_replace('%', '', $rate['surcharge']);
@@ -117,14 +122,45 @@ class EcomCore_Freight_Model_Rate
                     $method->setDeliveryType($rate['delivery_group']);
                     self::$rateResults[$methodCode] = $method;
 
-                    $result->append($method);
                 }
             }
         } else {
             Mage::log(__METHOD__.'() No rates found for this request');
         }
 
+        $otherRates = $this->extend($request, $result);
+        $allRates = array_merge(self::$rateResults, $otherRates);
+        $finalRates = array();
+        foreach ($allRates as $method) {
+            if (false === isset($finalRates[$method->getMethodTitle()]) || $method->getPrice() < $finalRates[$method->getMethodTitle()]->getPrice()) {
+                $method->setCarrier('eccfreight');
+                $finalRates[$method->getMethodTitle()] = $method;
+            }
+        }
+
+        foreach ($finalRates as $method) {
+            $result->append($method);
+        }
+
         return $result;
+    }
+
+    public function extend(Mage_Shipping_Model_Rate_Request $request, Mage_Shipping_Model_Rate_Result $result)
+    {
+        $methods = array();
+        $otherClasses = $this->getConfigData('alsoprocess');
+        if (empty($otherClasses)) {
+            return;
+        }
+        $otherClasses = explode("\n", $otherClasses);
+        foreach ($otherClasses as $class) {
+            $model = Mage::getModel($class);
+            $newresults = $model->collectRates($request)->getAllRates();
+            foreach ($newresults as $method) {
+                $methods[] = $method;
+            }
+        }
+        return $methods;
     }
 
     public function getRate(Mage_Shipping_Model_Rate_Request $request)

@@ -3,6 +3,9 @@
 class EcomCore_Freight_Model_Estimate
 {
 
+    const PLISTTYPE_ID  = 0;
+    const PLISTTYPE_SKU = 1;
+
     protected $quote;
     protected $products = array();
     public    $result;
@@ -18,13 +21,25 @@ class EcomCore_Freight_Model_Estimate
     public $existingCart = false;
     public $couponCode   = false;
 
-    public function setProducts($skuList)
+    public function setProducts($productList, $listType=self::PLISTTYPE_SKU)
     {
         $this->products = array();
-        foreach ($skuList as $sku => $qty) {
-            $product = Mage::helper('catalog/product')->getProduct($sku, $this->getQuote()->getStoreId());
+        foreach ($productList as $ident => $qty) {
+            if ($listType == self::PLISTTYPE_SKU) {
+                Mage::log(__METHOD__.'() Looking up product with sku `'.$ident.'`');
+                $product = Mage::helper('catalog/product')->getProduct($ident, $this->getQuote()->getStoreId(), 'sku');
+            } else if ($listType == self::PLISTTYPE_ID) {
+                Mage::log(__METHOD__.'() Loading product with id `'.$ident.'`');
+                $product = Mage::helper('catalog/product')->getProduct($ident, $this->getQuote()->getStoreId(), 'id');
+            } else {
+                Mage::log(__METHOD__.'() Loading product with identifier `'.$ident.'`');
+                $product = Mage::helper('catalog/product')->getProduct($ident, $this->getQuote()->getStoreId());
+            }
             if ($product->hasData()) {
+                Mage::log(__METHOD__.'() Success..');
                 $this->products[] = array('qty' => $qty, 'product' => $product);
+            } else {
+                Mage::log(__METHOD__.'() Failed');
             }
         }
     }
@@ -47,9 +62,9 @@ class EcomCore_Freight_Model_Estimate
     {
         if ($this->quote === null) {
             if ($this->existingCart) {
-                $this->quote = Mage::getSingleton('checkout/session')->getQuote();
+                $this->quote = Mage::getSingleton('checkout/type_onepage')->getQuote();
             } else {
-                $this->quote = Mage::getModel('sales/quote');
+                $this->quote = Mage::getSingleton('checkout/type_onepage')->getQuote();//Mage::getModel('sales/quote');
             }
         }
 
@@ -70,7 +85,7 @@ class EcomCore_Freight_Model_Estimate
         }
 
         return $this;
-    }     
+    }
 
     /**
      * Retrieve currently logged in customer,
@@ -98,6 +113,7 @@ class EcomCore_Freight_Model_Estimate
      */
     public function process()
     {
+        mage::log(__METHOD__.'() init');
         if ($this->existingCart) {
             $this->resetQuote();
         }
@@ -129,7 +145,7 @@ class EcomCore_Freight_Model_Estimate
         }
 
         foreach ($this->products as $p) {
-            $request = new Varien_Object(array('qty' => $p['qty'])); 
+            $request = new Varien_Object(array('qty' => $p['qty']));
             $product = $p['product'];
 
             if ($product->getStockItem()) {
@@ -152,5 +168,5 @@ class EcomCore_Freight_Model_Estimate
         $this->getQuote()->collectTotals();
         $this->result = $shippingAddress->getGroupedAllShippingRates();
         return $this;
-    }    
+    }
 }

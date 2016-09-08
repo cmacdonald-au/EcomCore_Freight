@@ -29,6 +29,7 @@ class EcomCore_Freight_IndexController extends Mage_Core_Controller_Front_Action
     {
 
 
+        $idList  = $this->getRequest()->getParam('i'); // (string)<id> or (json){<id>:[qty];<id>:[qty][;<id>:qty...]} qty will default to 1
         $skuList = $this->getRequest()->getParam('p'); // (string)<sku> or (json){<sku>:[qty];<sku>:[qty][;<sku>:qty...]} qty will default to 1 if unspecified
         $dest    = $this->getRequest()->getParam('d'); // (int)<postcode> or (json){postcode:<postcode>;country_id:<country_id>;...}
         $render  = $this->getRequest()->getParam('r'); // optional (int)1 render 1 or all
@@ -44,7 +45,7 @@ class EcomCore_Freight_IndexController extends Mage_Core_Controller_Front_Action
         	}
         }
 
-        if (empty($skuList)) {
+        if (empty($skuList) && empty($idList)) {
             return false;
         }
 
@@ -52,18 +53,28 @@ class EcomCore_Freight_IndexController extends Mage_Core_Controller_Front_Action
             return false;
         }
 
-        $skuList = json_decode($skuList, true);
-        if ($skuList === false || empty($skuList)) {
-        	$qty = max($this->getRequest()->getParam('q'), 1);
-        	$skuList = array($this->getRequest()->getParam('p') => $qty);
+        if (!empty($skuList)) {
+            $productList = json_decode($skuList, true);
+            $listType = EcomCore_Freight_Model_Estimate::PLISTTYPE_SKU;
+        } else if (!empty($idList)) {
+            $productList = json_decode($idList, true);
+            $listType = EcomCore_Freight_Model_Estimate::PLISTTYPE_ID;
         }
-        Mage::log(__METHOD__.'() Processing for SKU list '.json_encode($skuList));
+
+        if (is_array($productList) == false && (is_string($productList) || is_int($productList))) {
+        	$qty = max($this->getRequest()->getParam('q'), 1);
+        	$productList = array($productList => $qty);
+        }
+        Mage::log(__METHOD__.'() Processing for product list '.json_encode($productList));
 
         $destData = json_decode($dest);
         if ($destData === false || empty($destData)) {
+            Mage::log(__METHOD__.'() No destination');
         	return false;
         }
+
         if (is_int($destData)) {
+            Mage::log(__METHOD__.'() Single destination: '.$destData);
         	//single val = postcode
 	        $region   = Mage::helper('eccfreight/data')->getRegion($destData, 'AU');
         	$destData = array('country_id'=>'AU', 'postcode'=>$destData, 'region_id'=>$region['region_id']);
@@ -72,14 +83,17 @@ class EcomCore_Freight_IndexController extends Mage_Core_Controller_Front_Action
         }
 
         if (isset($destData['region']) && false == isset($destData['region_id'])) {
+            Mage::log(__METHOD__.'() Looking up region for {'.$destData['postcode'].'}, {'.$destData['country_id'].'}');
         	$region = Mage::helper('eccfreight/data')->getRegion($destData['postcode'], $destData['country_id']);
         	$destData['region_id'] = $region['region_id'];
         }
 
+        Mage::log(__METHOD__.'() Getting shipping estimates for '.json_encode($productList).' ['.$listType.']');
         $estimate = Mage::getModel('eccfreight/estimate');
-        $estimate->setProducts($skuList);
+        $estimate->setProducts($productList, $listType);
         $estimate->setDestination($destData);
         $estimate->process();
+        Mage::log(__METHOD__.'() Processed. Got '.count($estimate->result).' options');
 
         if ($render == 1) {
 	        $cheapestRate = array('price' => null, 'name' => '');

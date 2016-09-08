@@ -46,10 +46,10 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
 
         $totalWeight = $request->getPackageWeight();
 
-        // Mage::log($request->getDestCountryId());
-        // Mage::log($request->getDestRegionId());
-        // Mage::log($postcode);
-        // Mage::log(var_export($request->getConditionName(), true));
+        Mage::log(__METHOD__.'() Country: '.$request->getDestCountryId());
+        Mage::log(__METHOD__.'() Region: '.$request->getDestRegionId());
+        Mage::log(__METHOD__.'() Postcode: '.$postcode);
+        Mage::log(__METHOD__.'() Condition: '.var_export($request->getConditionName(), true));
 
         for ($j = 0; $j < 5; $j++) {
 
@@ -66,7 +66,7 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
                 case 1:
                     $select->where(
                        $read->quoteInto("  (dest_country_id=? ", $request->getDestCountryId()).
-                            $read->quoteInto(" AND dest_region_id=? AND dest_zip='0000') ", $request->getDestRegionId())
+                            $read->quoteInto(" AND dest_zip=?) ", $postcode)
                        );
                     break;
 
@@ -100,7 +100,8 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
             $select->order('weight_from DESC');
 
             $newdata=array();
-            // Mage::log($select->__toString());
+            Mage::log($select->__toString());
+
             $row = $read->fetchAll($select);
             if (!empty($row) && ($j < 5)) {
                 // We keep trying until we get a result, or run out of generic queries.
@@ -247,7 +248,7 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
                 $itemSummary[$shipClass]['charge'] += ($product->getShippingFlatrate()*$item->getQty());
             } else if (substr($shipClass, 0, 6) == 'capped') {
                 // basic structure is that capped groupings are set with capped<class>_value
-                // example rules; 
+                // example rules;
                 //  * items with cappedhats will be grouped together.
                 //  * the value of the cap will be defined by the shiprate_capped attribute for each product.
                 //  * If the product has ship_class set to 'cappedhats' and the shiprate_capped attribute has a value of 20.
