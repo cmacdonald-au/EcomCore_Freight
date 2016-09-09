@@ -145,13 +145,13 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
                                     }
                                     $price += $increments * $data['price_per_increment'];
 
-                                    Mage::Log(__METHOD__.'() Basic rate: '.$data['price'].' plus '.$increments.' @ '.$data['price_per_increment'].' each (~'.$data['increment_weight'].'kg, starting at '.$data['increment_start'].'kg) on a chargeable weight of '.$chargeableWeight.'kg, wi '.$values['units'].' units for a total weight of '.$values['weight']);
+                                    Mage::Log(__METHOD__.'() Consigned basic rate: '.$data['price'].' plus '.$increments.' @ '.$data['price_per_increment'].' each (~'.$data['increment_weight'].'kg, starting at '.$data['increment_start'].'kg) on a chargeable weight of '.$chargeableWeight.'kg, wi '.$values['units'].' units for a total weight of '.$values['weight']);
 
                                 } else if ($data['consignment_option'] == 2) {
 
                                     Mage::Log(__METHOD__.'() Calculating rates per-line for '.$data['carrier_code'].'/'.$data['delivery_group']);
                                     $price = 0;
-                                    foreach ($values['item_data'] as $item) {
+                                    foreach ($values['item_data'] as $sku => $item) {
                                         $itemWeight = ($item['weight']*$item['units']);
                                         $chargeableWeight = $itemWeight;
                                         if ($data['increment_start'] > 1) {
@@ -168,7 +168,7 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
                                             $price += $increments * $data['price_per_increment'];
                                         }
 
-                                        Mage::Log(__METHOD__.'() Basic rate: '.$data['price'].' plus '.$increments.' @ '.$data['price_per_increment'].' each (~'.$data['increment_weight'].'kg, starting at '.$data['increment_start'].'kg) on a chargeable weight of '.$chargeableWeight.'kg, wi '.$values['units'].' units for a total weight of '.$values['weight']);
+                                        Mage::Log(__METHOD__.'() Per-Line basic rate for item '.$sku.': '.$data['price'].' plus '.$increments.' @ '.$data['price_per_increment'].' each (~'.$data['increment_weight'].'kg, starting at '.$data['increment_start'].'kg) on a chargeable weight of '.$chargeableWeight.'kg, wi '.$item['units'].' units for a total weight of '.$item['weight']);
 
                                     }
                                 } else {
@@ -238,8 +238,8 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
 
             if ($cubicAttribute) {
                 $unitCubic  = $product->getData($cubicAttribute);
-                Mage::Log(__METHOD__.'() Product has cubic weight of '.$unitCubic);
             }
+            Mage::Log(__METHOD__.'() Product #'.$productId.' `'.$product->getSku().'` has cubic weight of '.$unitCubic.' dead weight of '.$unitWeight.' and we have '.$unitCount.' of them');
 
             $chargeWeight = max($unitCubic, $unitWeight);
 
@@ -258,7 +258,7 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
 
             $itemSummary[$shipClass]['weight'] += ($chargeWeight*$unitCount);
             $itemSummary[$shipClass]['units']  += $unitCount;
-            $itemSummary[$shipClass]['item_data'][] = array('weight' => $chargeWeight, 'units' => $unitCount);
+            $itemSummary[$shipClass]['item_data'][$product->getSku()] = array('weight' => $chargeWeight, 'units' => $unitCount);
 
             Mage::log(__METHOD__.'() Added '.$unitCount.' units ('.$item->getQty().') with a combined weight of '.($chargeWeight*$unitCount).'kg');
 

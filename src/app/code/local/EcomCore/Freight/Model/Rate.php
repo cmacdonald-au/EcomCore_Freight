@@ -163,10 +163,17 @@ class EcomCore_Freight_Model_Rate
         }
         $otherClasses = explode("\n", $otherClasses);
         foreach ($otherClasses as $class) {
+            Mage::log(__METHOD__.'() trying `'.$class.'`');
             $model = Mage::getModel($class);
-            $newresults = $model->collectRates($request)->getAllRates();
-            foreach ($newresults as $method) {
-                $methods[] = $method;
+            $model->setOverride(true);
+            $results = $model->collectRates($request);
+            if ($results instanceof Mage_Shipping_Model_Rate_Result) {
+                $rates = $results->getAllRates();
+                foreach ($rates as $method) {
+                    $methods[] = $method;
+                }
+            } else {
+                Mage::log(__METHOD__.'() Got back an unsupported result `'.get_class($results).'`');
             }
         }
         return $methods;
