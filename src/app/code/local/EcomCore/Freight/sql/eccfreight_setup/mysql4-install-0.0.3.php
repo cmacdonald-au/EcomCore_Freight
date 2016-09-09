@@ -46,12 +46,12 @@ CREATE TABLE {$this->getTable('eccfreight_rates')} (
   `maxkg_per_consigment` decimal(12,4) NOT NULL default '0.0000',
   `cap` decimal(12,4) DEFAULT NULL,
   `surcharge` varchar(12) DEFAULT NULL,
-  `min_charge` decimal(12,4) DEFAULT NULL,  
+  `min_charge` decimal(12,4) DEFAULT NULL,
   `delivery_group` varchar(50) NOT NULL default '',
   `carrier_code` varchar(50) default NULL,
   `adjustment_rules` varchar(255) default NULL,
   PRIMARY KEY  (`pk`),
-  UNIQUE KEY `dest_country` ( `website_id` , `dest_country_id` , `dest_region_id` , `dest_zip` , `weight_from` , `weight_to`, `delivery_group`)
+  UNIQUE KEY `dest_country` ( `website_id` , `dest_country_id` , `dest_region_id` , `dest_zip` , `weight_from` , `weight_to`, `delivery_group`, `carrier_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 ");
 

@@ -34,6 +34,7 @@ class EcomCore_Freight_Helper_Rate extends Mage_Core_Helper_Abstract
         'price'                => 'Basic Price',
         'price_per_increment'  => 'Price Per Increment',
         'increment_weight'     => 'Increment Weight',
+        'increment_start'      => 'Increment Start',
         'price_per_article'    => 'Price Per Article',
         'consignment_option'   => 'Consignment Option',
         'maxkg_per_consigment' => 'Max Kg Per Consignment',

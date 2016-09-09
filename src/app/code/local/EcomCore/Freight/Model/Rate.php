@@ -101,7 +101,7 @@ class EcomCore_Freight_Model_Rate
                         $rate['price'] = $rate['min_charge'];
                     }
 
-                    $shippingPrice = $this->getFinalPriceWithHandlingFee($rate['price']);
+                    $shippingPrice = $this->getFinalPriceWithHandlingFee($rate['price'])*1.1;
 
                     if (isset($rate['surcharge']) && !empty($rate['surcharge'])) {
                         if (strpos($rate['surcharge'], '%') !== false) {
@@ -129,7 +129,9 @@ class EcomCore_Freight_Model_Rate
         }
 
         $otherRates = $this->extend($request, $result);
+        Mage::log(__METHOD__.'() Got '.count($otherRates).' rates from extend()');
         foreach ($otherRates as $rate) {
+            Mage::log(__METHOD__.'() Extended rate details '.json_encode($rate->toArray()));
             self::$rateResults[$rate->getMethod()] = $rate;
         }
 

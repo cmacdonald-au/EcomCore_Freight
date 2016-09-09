@@ -62,7 +62,7 @@ class EcomCore_Freight_Model_Estimate
     public function getQuote()
     {
         if ($this->quote === null) {
-            $quote = Mage::getSingleton('checkout/type_onepage')->getQuote();
+            $quote = Mage::getSingleton('checkout/cart')->getQuote();
             if ($quote->hasData()) {
                 $this->existingCart = true;
                 $this->quote = $quote;
@@ -82,6 +82,7 @@ class EcomCore_Freight_Model_Estimate
     public function resetQuote()
     {
         $this->getQuote()->removeAllAddresses();
+        Mage::getSingleton('checkout/cart')->truncate();
 
         if ($this->getCustomer()) {
             $this->getQuote()->setCustomer($this->getCustomer());
@@ -118,6 +119,7 @@ class EcomCore_Freight_Model_Estimate
     {
         mage::log(__METHOD__.'() init');
         if ($this->existingCart) {
+            Mage::log(__METHOD__.'() Resetting quote');
             $this->resetQuote();
         }
 
@@ -164,8 +166,7 @@ class EcomCore_Freight_Model_Estimate
                 Mage::throwException($result);
             }
 
-            Mage::dispatchEvent('checkout_cart_product_add_after',
-                                array('quote_item' => $result, 'product' => $product));
+            Mage::dispatchEvent('checkout_cart_product_add_after', array('quote_item' => $result, 'product' => $product));
         }
 
         $this->getQuote()->collectTotals();
