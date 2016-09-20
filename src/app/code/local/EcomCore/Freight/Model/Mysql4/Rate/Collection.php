@@ -34,7 +34,7 @@ class EcomCore_Freight_Model_Mysql4_Rate_Collection extends Varien_Data_Collecti
     {
         $coreResource = Mage::getSingleton('core/resource');
         parent::__construct($coreResource->getConnection('eccfreight_read'));
-        $this->_shipTable = $coreResource->getTableName('eccfreight/eparcel');
+        $this->_shipTable = $coreResource->getTableName('eccfreight_rates');
         $this->_countryTable = $coreResource->getTableName('directory/country');
         $this->_regionTable = $coreResource->getTableName('directory/country_region');
         $this->_select->from(array("s" => $this->_shipTable))

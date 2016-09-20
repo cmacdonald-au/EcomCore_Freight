@@ -78,7 +78,7 @@ class EcomCore_Freight_Model_Rate
                     /** @var Mage_Shipping_Model_Rate_Result_Method $method */
                     $method = Mage::getModel('eccfreight/rate_result_method');
 
-                    $method->setCarrier('eccfreight');
+                    $method->setCarrier($this->_code);
                     $method->setCarrierTitle($this->getConfigData('title'));
                     $method->setAdjustmentRules($rate['adjustment_rules']);
 
@@ -125,7 +125,7 @@ class EcomCore_Freight_Model_Rate
                 }
             }
         } else {
-            Mage::log(__METHOD__.'() No rates found for this request');
+            Mage::log(__METHOD__.'() No rates available for this request');
         }
 
         $otherRates = $this->extend($request, $result);
@@ -138,11 +138,13 @@ class EcomCore_Freight_Model_Rate
         $allRates = self::$rateResults;
         $finalRates = array();
         foreach ($allRates as $method) {
+            // Combine all rates, consolidating based on the method title.
+            // We choose the cheapest name rate by default and then change the carrier code to eccfreight to signify we've applied logic
             if (false === isset($finalRates[$method->getMethodTitle()]) || $method->getPrice() < $finalRates[$method->getMethodTitle()]->getPrice()) {
                 if (isset($finalRates[$method->getMethodTitle()])) {
                     Mage::log(__METHOD__.'() Replacing existing rate `'.$method->getMethodTitle().'` ($'.$finalRates[$method->getMethodTitle()]->getPrice().') with new rate ($'.$method->getPrice().') '.json_encode($method->toArray()));
                 }
-                $method->setCarrier('eccfreight');
+                $method->setCarrier($this->_code);
                 $finalRates[$method->getMethodTitle()] = $method;
             }
         }
@@ -154,27 +156,60 @@ class EcomCore_Freight_Model_Rate
         return $result;
     }
 
+    protected function tempEnableCarrier($model)
+    {
+        $carrierCode = $model->getCarrierCode();
+        if (Mage::app()->getStore()->getConfig('carriers/'.$carrierCode.'/active')) {
+            Mage::log(__METHOD__.'() '.$carrierCode.' already enabled');
+            return false;
+        }
+
+        Mage::log(__METHOD__.'() Forcing '.$carrierCode.' to active');
+        Mage::app()->getStore()->setConfig('carriers/'.$carrierCode.'/active', '1');
+        return true;
+
+    }
+
+    protected function clearTempEnableCarrier($model)
+    {
+        $carrierCode = $model->getCarrierCode();
+        Mage::log(__METHOD__.'() Reverting '.$carrierCode.' to inactive');
+        Mage::app()->getStore()->setConfig('carriers/'.$carrierCode.'/active', '0');
+    }
+
     public function extend(Mage_Shipping_Model_Rate_Request $request, Mage_Shipping_Model_Rate_Result $result)
     {
+
         $methods = array();
         $otherClasses = $this->getConfigData('alsoprocess');
         if (empty($otherClasses)) {
             return;
         }
         $otherClasses = explode("\n", $otherClasses);
+
         foreach ($otherClasses as $class) {
+
             Mage::log(__METHOD__.'() trying `'.$class.'`');
             $model = Mage::getModel($class);
-            $model->setOverride(true);
+
+            $forced = $this->tempEnableCarrier($model);
             $results = $model->collectRates($request);
+
+            if ($forced) {
+                $this->clearTempEnableCarrier($model);
+            }
+
             if ($results instanceof Mage_Shipping_Model_Rate_Result) {
                 $rates = $results->getAllRates();
                 foreach ($rates as $method) {
                     $methods[] = $method;
                 }
+            } else if ($results === false) {
+                Mage::log(__METHOD__.'() Attempting to get rates from '.$model->getCarrierCode().' ('.$class.') gave us `false`');
             } else {
                 Mage::log(__METHOD__.'() Got back an unsupported result `'.get_class($results).'`');
             }
+
         }
         return $methods;
     }
@@ -218,7 +253,7 @@ class EcomCore_Freight_Model_Rate
      */
     public function getAllowedMethods()
     {
-        return array('eccfreight' => $this->getConfigData('name'));
+        return array($this->_code => $this->getConfigData('name'));
     }
 
     /*

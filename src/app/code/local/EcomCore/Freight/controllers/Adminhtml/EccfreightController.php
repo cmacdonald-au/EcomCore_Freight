@@ -41,33 +41,30 @@ class EcomCore_Freight_Adminhtml_EccfreightController extends Mage_Adminhtml_Con
 
         Mage::log(__METHOD__.'() Doing things');
         $rates = Mage::getResourceModel('eccfreight/rate_collection');
-        $response = array(
-            $headerLine;
+        $lines = array(
+            $headerLine
         );
 
         foreach ($rates as $rate) {
-            $countryId   = $rate->getData('dest_country_id');
-            $countryCode = Mage::getModel('directory/country')->load($countryId)->getIso3Code();
-            $regionId    = $rate->getData('dest_region_id');
-            $regionCode  = Mage::getModel('directory/region')->load($regionId)->getCode();
 
-            $line = array(
-                $countryCode,
-                $regionCode
-            );
+            $rate->setData('dest_country_id', Mage::getModel('directory/country')->load($rate->getData('dest_country_id'))->getIso3Code());
+            $rate->setData('dest_region_id', Mage::getModel('directory/region')->load($rate->getData('dest_region_id'))->getCode());
+
+            $line = array();
 
             foreach ($csvFields as $field) {
                 $line[] = $rate->getData($field);
             }
 
-            $response[] = $line;
+            $lines[] = $line;
+
         }
 
         $csv = new Varien_File_Csv();
         $temp = tmpfile();
 
-        foreach ($response as $responseRow) {
-            $csv->fputcsv($temp, $responseRow);
+        foreach ($lines as $line) {
+            $csv->fputcsv($temp, $line);
         }
 
         rewind($temp);
