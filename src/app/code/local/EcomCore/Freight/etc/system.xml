@@ -48,7 +48,7 @@
                             <label>Export</label>
                             <frontend_type>button</frontend_type>
                             <frontend_model>eccfreight/rate_export</frontend_model>
-                            <sort_order>5</sort_order>
+                            <sort_order>2</sort_order>
                             <show_in_default>0</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>0</show_in_store>
@@ -57,7 +57,7 @@
                             <label>Import</label>
                             <frontend_type>import</frontend_type>
                             <backend_model>eccfreight/config_rate</backend_model>
-                            <sort_order>6</sort_order>
+                            <sort_order>2</sort_order>
                             <show_in_default>0</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>0</show_in_store>
@@ -90,7 +90,7 @@
                             <label>My dimensions are in</label>
                             <frontend_type>select</frontend_type>
                             <source_model>eccfreight/config_dimensionunits</source_model>
-                            <sort_order>3</sort_order>
+                            <sort_order>5</sort_order>
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
@@ -113,10 +113,47 @@
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
                         </cubicattribute>
+                        <applyfactortocubic>
+                            <label>Apply cubic dimension factor to cubic weight</label>
+                            <comment>Setting this to yes will multiply the value in the cubic weight attribute by 250</comment>
+                            <frontend_type>select</frontend_type>
+                            <sort_order>4</sort_order>
+                            <source_model>adminhtml/system_config_source_yesno</source_model>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </applyfactortocubic>
+                        <dimxattribute>
+                            <label>Length attribute</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>eccfreight/config_attribute</source_model>
+                            <sort_order>5</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </dimxattribute>
+                        <dimyattribute>
+                            <label>Height attribute</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>eccfreight/config_attribute</source_model>
+                            <sort_order>5</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </dimyattribute>
+                        <dimzattribute>
+                            <label>Depth attribute</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>eccfreight/config_attribute</source_model>
+                            <sort_order>5</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </dimzattribute>
                         <shippingclasses>
                             <label>Shipping classes</label>
                             <frontend_type>textarea</frontend_type>
-                            <sort_order>4</sort_order>
+                            <sort_order>10</sort_order>
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
@@ -124,7 +161,7 @@
                         <alsoprocess>
                             <label>Also process these classes</label>
                             <frontend_type>textarea</frontend_type>
-                            <sort_order>5</sort_order>
+                            <sort_order>11</sort_order>
                             <show_in_default>1</show_in_default>
                             <show_in_store>0</show_in_store>
                             <show_in_store>0</show_in_store>

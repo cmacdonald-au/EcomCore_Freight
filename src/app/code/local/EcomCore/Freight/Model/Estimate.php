@@ -81,11 +81,17 @@ class EcomCore_Freight_Model_Estimate
     */
     public function resetQuote()
     {
-        $this->getQuote()->removeAllAddresses();
+        $quote = $this->getQuote();
+
+        $quote->removeAllAddresses();
+        $quote->setTotalsCollectedFlag(false);
+        $quote->getShippingAddress()->unsetData('cached_items_all');
+        $quote->getShippingAddress()->unsetData('cached_items_nominal');
+        $quote->getShippingAddress()->unsetData('cached_items_nonnominal');
         Mage::getSingleton('checkout/cart')->truncate();
 
         if ($this->getCustomer()) {
-            $this->getQuote()->setCustomer($this->getCustomer());
+            $quote->setCustomer($this->getCustomer());
         }
 
         return $this;
@@ -149,7 +155,10 @@ class EcomCore_Freight_Model_Estimate
             $this->getQuote()->setCouponCode($this->coupon_code);
         }
 
+        $quote = $this->getQuote();
         foreach ($this->products as $p) {
+
+            Mage::log(__METHOD__.'() Adding '.$p['qty'].' of '.$p['product']->getData('sku'));
             $request = new Varien_Object(array('qty' => $p['qty']));
             $product = $p['product'];
 
@@ -160,17 +169,19 @@ class EcomCore_Freight_Model_Estimate
                 }
             }
 
-            $result = $this->getQuote()->addProduct($product, $request);
+            $result = $quote->addProduct($product, $request);
 
             if (is_string($result)) {
                 Mage::throwException($result);
             }
 
             Mage::dispatchEvent('checkout_cart_product_add_after', array('quote_item' => $result, 'product' => $product));
+
         }
 
-        $this->getQuote()->collectTotals();
+        $quote->collectTotals();
         $this->result = $shippingAddress->getGroupedAllShippingRates();
+        Mage::log(__METHOD__.'() Done');
         return $this;
     }
 }

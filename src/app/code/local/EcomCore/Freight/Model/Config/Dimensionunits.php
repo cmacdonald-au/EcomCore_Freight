@@ -24,6 +24,8 @@ class EcomCore_Freight_Model_Config_Dimensionunits
 {
     const METERS = 1;
     const CMS    = 2;
+    const CUBIC_MULTIPLIER = 250;
+    const CUBIC_CMTOM = 1000000;
 
     /**
      * Options getter

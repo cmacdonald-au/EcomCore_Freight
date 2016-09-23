@@ -33,6 +33,9 @@ class EcomCore_Freight_Model_Rate
     extends Mage_Shipping_Model_Carrier_Abstract
     implements Mage_Shipping_Model_Carrier_Interface
 {
+
+    const NO_EXTEND = true;
+
     /**
      * @var string
      */
@@ -63,6 +66,7 @@ class EcomCore_Freight_Model_Rate
             Mage::log(__METHOD__.'() Module disabled');
             return false;
         }
+        Mage::log(__METHOD__.'() Starting');
 
         if (!$request->getConditionName()) {
             $request->setConditionName($this->getConfigData('condition_name') ? $this->getConfigData('condition_name') : $this->_default_condition_name);
@@ -130,9 +134,11 @@ class EcomCore_Freight_Model_Rate
 
         $otherRates = $this->extend($request, $result);
         Mage::log(__METHOD__.'() Got '.count($otherRates).' rates from extend()');
-        foreach ($otherRates as $rate) {
-            Mage::log(__METHOD__.'() Extended rate details '.json_encode($rate->toArray()));
-            self::$rateResults[$rate->getMethod()] = $rate;
+        if (!empty($otherRates)) {
+            foreach ($otherRates as $rate) {
+                Mage::log(__METHOD__.'() Extended rate details '.json_encode($rate->toArray()));
+                self::$rateResults[$rate->getMethod()] = $rate;
+            }
         }
 
         $allRates = self::$rateResults;
@@ -179,6 +185,10 @@ class EcomCore_Freight_Model_Rate
 
     public function extend(Mage_Shipping_Model_Rate_Request $request, Mage_Shipping_Model_Rate_Result $result)
     {
+
+        if (self::NO_EXTEND === true) {
+            return;
+        }
 
         $methods = array();
         $otherClasses = $this->getConfigData('alsoprocess');
@@ -320,6 +330,13 @@ class EcomCore_Freight_Model_Rate
         }
     }
 
+    /**
+     * !!Adjustments stack!!
+     * eg;
+     *  Rule list: ebay:+15%;lift:+10%;
+     *  This will apply a 15% increase for ebay requests _and_ a 10% global lift
+     * Processing order is based on entry order, so a value of lift:+10;ebay:+15% will add $10 and then 15%.
+     */
     public static function applyAdjustments(Mage_Sales_Model_Quote_Address_Rate $rate)
     {
         if (empty(self::$rateResults)) {
@@ -345,7 +362,10 @@ class EcomCore_Freight_Model_Rate
                 $adjustmentValue = self::getAdjustmentAmount($adjustment[1], $currentPrice);
                 Mage::log(__METHOD__.'() Adjusting price by '.$adjustmentValue.' (from: '.$currentPrice.', to: '.($currentPrice+$adjustmentValue).') due to adjustment rule `'.$adjustmentRule.'`');
                 $currentPrice = $currentPrice+$adjustmentValue;
-                break;
+            } else if ($adjustment[0] == 'lift') {
+                $adjustmentValue = self::getAdjustmentAmount($adjustment[1], $currentPrice);
+                Mage::log(__METHOD__.'() Adjusting price by '.$adjustmentValue.' (from: '.$currentPrice.', to: '.($currentPrice+$adjustmentValue).') due to adjustment rule `'.$adjustmentRule.'`');
+                $currentPrice = $currentPrice+$adjustmentValue;
             }
         }
 
