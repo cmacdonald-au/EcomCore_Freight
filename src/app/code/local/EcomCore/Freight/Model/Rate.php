@@ -34,7 +34,7 @@ class EcomCore_Freight_Model_Rate
     implements Mage_Shipping_Model_Carrier_Interface
 {
 
-    const NO_EXTEND = true;
+    const NO_EXTEND = false;
 
     /**
      * @var string
@@ -132,12 +132,16 @@ class EcomCore_Freight_Model_Rate
             Mage::log(__METHOD__.'() No rates available for this request');
         }
 
+        $extensionRule = $this->getConfigData('extensionrule');
         $otherRates = $this->extend($request, $result);
         Mage::log(__METHOD__.'() Got '.count($otherRates).' rates from extend()');
         if (!empty($otherRates)) {
             foreach ($otherRates as $rate) {
                 Mage::log(__METHOD__.'() Extended rate details '.json_encode($rate->toArray()));
-                self::$rateResults[$rate->getMethod()] = $rate;
+                if ($extensionRule == 'use_extend') {
+                    self::$rateResults = array($rate->getMethod() => $rate);
+                    break;
+                }
             }
         }
 
@@ -185,10 +189,6 @@ class EcomCore_Freight_Model_Rate
 
     public function extend(Mage_Shipping_Model_Rate_Request $request, Mage_Shipping_Model_Rate_Result $result)
     {
-
-        if (self::NO_EXTEND === true) {
-            return;
-        }
 
         $methods = array();
         $otherClasses = $this->getConfigData('alsoprocess');

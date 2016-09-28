@@ -166,6 +166,15 @@
                             <show_in_store>0</show_in_store>
                             <show_in_store>0</show_in_store>
                         </alsoprocess>
+                        <extensionrule>
+                            <label>Extension rule</label>
+                            <frontend_type>select</frontend_type>
+                            <sort_order>12</sort_order>
+                            <source_model>eccfreight/config_extensionrule</source_model>
+                            <show_in_default>1</show_in_default>
+                            <show_in_store>0</show_in_store>
+                            <show_in_store>0</show_in_store>
+                        </extensionrule>
                         <sallowspecific translate="label">
                             <label>Ship to applicable countries</label>
                             <frontend_type>select</frontend_type>

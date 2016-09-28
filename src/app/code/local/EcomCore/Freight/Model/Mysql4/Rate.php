@@ -304,7 +304,9 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
                     $unitCubic = ($unitCubic/EcomCore_Freight_Model_Config_Dimensionunits::CUBIC_CMTOM);
                 }
 
-                $unitCubic *= EcomCore_Freight_Model_Config_Dimensionunits::CUBIC_MULTIPLIER;
+                if ($applyfactortocubic) {
+                    $unitCubic *= EcomCore_Freight_Model_Config_Dimensionunits::CUBIC_MULTIPLIER;
+                }
                 Mage::log(__METHOD__.'() cubic measurement calculated as ('.max(1,$product->getData($dimxAttribute)).'*'.max(1,$product->getData($dimyAttribute)).'*'.max(1,$product->getData($dimzAttribute)).' '.($dimensionunits == EcomCore_Freight_Model_Config_Dimensionunits::CMS ? '/'.EcomCore_Freight_Model_Config_Dimensionunits::CUBIC_CMTOM : '').' * '.EcomCore_Freight_Model_Config_Dimensionunits::CUBIC_MULTIPLIER.')');
             }
 
