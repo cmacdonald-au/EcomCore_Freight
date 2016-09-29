@@ -164,6 +164,7 @@ class EcomCore_Freight_Helper_Rate extends Mage_Core_Helper_Abstract
             'list'     => array(),
             'cheapest' => array('price' => null, 'name' => ''),
         );
+
         foreach ($estimate->result as $code => $rate) {
             foreach ($rate as $option) {
                 if ($option->getErrorMessage()) {

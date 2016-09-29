@@ -223,6 +223,7 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
                             }
                         }
 
+                        $data['cost'] = (float)$price;
                         $data['price'] = (float)$price;
                         Mage::log(__METHOD__.'() Rate set: '.json_encode($data, true));
                         $newdata[] = $data;
@@ -271,12 +272,13 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
         }
 
         $itemSummary = array(
-            'standard' => array('units' => 0, 'weight' => 0),
+            'standard' => array('units' => 0, 'weight' => 0, 'adjustments' => array()),
         );
 
         $itemNumber    = 0;
         $parcelCount   = 0;
         foreach ($items as $item) {
+
             $parcelCount++;
             $productId = $item->getProductId();
             $product   = $item->getProduct();
@@ -315,7 +317,11 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
 
             Mage::Log(__METHOD__.'() Product #'.$productId.' `'.$product->getSku().'` has cubic weight of '.$unitCubic.' dead weight of '.$unitWeight.'. Chargeable weight is '.$chargeWeight.' and we have '.$unitCount.' of them');
 
-            $shipClass = 'standard';
+            if ($item->getData('free_shipping') == true) {
+                $shipClass = 'free';
+            } else {
+                $shipClass = 'standard';
+            }
             if (!empty($shippingClassRules)) {
                 $shipClass = $product->getAttributeText('shipping_class');
                 Mage::log(__METHOD__.'() #'.$itemNumber.' {'.$unitCount.' X '.$chargeWeight.'} shipClass override: `'.$shipClass.'`');
@@ -327,14 +333,16 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
                     }
                 }
             }
-
             $itemSummary[$shipClass]['weight'] += ($chargeWeight*$unitCount);
             $itemSummary[$shipClass]['units']  += $unitCount;
             $itemSummary[$shipClass]['item_data'][$product->getSku()] = array('weight' => $chargeWeight, 'units' => $unitCount);
+            $itemSummary[$shipClass]['adjustments'][$product->getId()] = $this->getPromoRules($item);
 
             Mage::log(__METHOD__.'() Added '.$unitCount.' units ('.$item->getQty().') with a combined weight of '.($chargeWeight*$unitCount).'kg');
 
-            if ($shipClass == 'fixed') {
+            if ($shipClass == 'free') {
+                $itemSummary[$shipClass]['charge'] = 0;
+            } else if ($shipClass == 'fixed') {
                 $itemSummary[$shipClass]['charge'] += ($product->getShippingFlatrate()*$item->getQty());
             } else if (substr($shipClass, 0, 6) == 'capped') {
                 // basic structure is that capped groupings are set with capped<class>_value
@@ -354,6 +362,23 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
         }
 
         return $itemSummary;
+
+    }
+
+    public function getPromoRules($item)
+    {
+        $rules = explode(",",$item->getAppliedRuleIds());
+        if (empty($rules)) return;
+
+        $adjustments = array();
+        foreach ($rules as $id) {
+            $rule = Mage::getModel('salesrule/rule')->load($id);
+            if ($rule->apply_to_shipping != 1) {
+                continue;
+            }
+            $adjustments[] = array('type' => $rule->getData('simple_action'), 'amount' => $rule->getData('discount_amount'));
+        }
+        return $adjustments;
 
     }
 

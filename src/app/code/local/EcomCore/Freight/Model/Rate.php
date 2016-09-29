@@ -122,6 +122,7 @@ class EcomCore_Freight_Model_Rate
                         }
                     }
 
+                    $method->setCost($shippingPrice);
                     $method->setPrice($shippingPrice);
                     $method->setDeliveryType($rate['delivery_group']);
                     self::$rateResults[$methodCode] = $method;
@@ -141,6 +142,8 @@ class EcomCore_Freight_Model_Rate
                 if ($extensionRule == 'use_extend') {
                     self::$rateResults = array($rate->getMethod() => $rate);
                     break;
+                } else {
+                    self::$rateResults[$rate->getMethod()] = $rate;
                 }
             }
         }
