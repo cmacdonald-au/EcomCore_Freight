@@ -96,21 +96,15 @@
         <carriers>
             <eccfreight>
                 <active>0</active>
-                <sallowspecific>0</sallowspecific>
                 <condition_name>package_weight</condition_name>
                 <model>eccfreight/rate</model>
-                <name>eccfreight</name>
-                <title>Custom Freight</title>
+                <name></name>
+                <title>Shipping</title>
+                <dimensionunits>2</dimensionunits>
+                <weightunits>1</weightunits>
                 <sallowspecific>1</sallowspecific>
                 <specificcountry>AU</specificcountry>
                 <specificerrmsg>This shipping method is currently unavailable. If you would like to ship using this shipping method, please contact us.</specificerrmsg>
-                <handling_type>F</handling_type>
-                <merchant_location_id>AWV</merchant_location_id>
-                <post_charge_account>1234567</post_charge_account>
-                <signature_required>0</signature_required>
-                <signature_cost>6.44</signature_cost>
-                <insurance_step>100.0</insurance_step>
-                <insurance_cost_per_step>1.05</insurance_cost_per_step>
             </eccfreight>
         </carriers>
         <ecomcore_freight>

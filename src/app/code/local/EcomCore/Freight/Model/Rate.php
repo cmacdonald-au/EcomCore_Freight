@@ -139,7 +139,13 @@ class EcomCore_Freight_Model_Rate
         if (!empty($otherRates)) {
             foreach ($otherRates as $rate) {
                 Mage::log(__METHOD__.'() Extended rate details '.json_encode($rate->toArray()));
+                if ($rate->getData('price') === null) {
+                    Mage::log(__METHOD__.'() Skipping rate, price is null');
+                    continue;
+                }
                 if ($extensionRule == 'use_extend') {
+                    // Techinically, if we're taking the first extension rate, then this should be up the top, _before_ we process any of the above. @TODO
+                    Mage::log(__METHOD__.'() Taking rate '.$rate->getCode().' for $'.$rate->getData('price'));
                     self::$rateResults = array($rate->getMethod() => $rate);
                     break;
                 } else {
@@ -169,6 +175,8 @@ class EcomCore_Freight_Model_Rate
         return $result;
     }
 
+
+    /* This and it's companion should be in a helper... */
     protected function tempEnableCarrier($model)
     {
         $carrierCode = $model->getCarrierCode();
@@ -312,13 +320,14 @@ class EcomCore_Freight_Model_Rate
             $tracking->setCarrier($this->_code);
             $tracking->setCarrierTitle($this->getConfigData('title'));
             $tracking->setTracking($t);
-            $tracking->setUrl('http://auspost.com.au/track/');
+            $tracking->setUrl('#tracking');
             $result->append($tracking);
         }
 
         return $result;
     }
 
+    // Move to helper
     public static function isEbayRequest()
     {
         if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
@@ -334,9 +343,11 @@ class EcomCore_Freight_Model_Rate
     }
 
     /**
+     * Move to helper....maybe
+     *
      * !!Adjustments stack!!
      * eg;
-     *  Rule list: ebay:+15%;lift:+10%;
+     *  Rule list: ebay:+15%;global:+10%;
      *  This will apply a 15% increase for ebay requests _and_ a 10% global lift
      * Processing order is based on entry order, so a value of lift:+10;ebay:+15% will add $10 and then 15%.
      */
@@ -365,7 +376,7 @@ class EcomCore_Freight_Model_Rate
                 $adjustmentValue = self::getAdjustmentAmount($adjustment[1], $currentPrice);
                 Mage::log(__METHOD__.'() Adjusting price by '.$adjustmentValue.' (from: '.$currentPrice.', to: '.($currentPrice+$adjustmentValue).') due to adjustment rule `'.$adjustmentRule.'`');
                 $currentPrice = $currentPrice+$adjustmentValue;
-            } else if ($adjustment[0] == 'lift') {
+            } else if ($adjustment[0] == 'global') {
                 $adjustmentValue = self::getAdjustmentAmount($adjustment[1], $currentPrice);
                 Mage::log(__METHOD__.'() Adjusting price by '.$adjustmentValue.' (from: '.$currentPrice.', to: '.($currentPrice+$adjustmentValue).') due to adjustment rule `'.$adjustmentRule.'`');
                 $currentPrice = $currentPrice+$adjustmentValue;
