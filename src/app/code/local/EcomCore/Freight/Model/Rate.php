@@ -72,7 +72,7 @@ class EcomCore_Freight_Model_Rate
             $request->setConditionName($this->getConfigData('condition_name') ? $this->getConfigData('condition_name') : $this->_default_condition_name);
         }
 
-        $result = Mage::getModel('shipping/rate_result');
+        $result = Mage::getModel('eccfreight/rate_result');
         $rates = $this->getRate($request);
 
         if (is_array($rates)) {
@@ -209,6 +209,7 @@ class EcomCore_Freight_Model_Rate
         $otherClasses = explode("\n", $otherClasses);
 
         foreach ($otherClasses as $class) {
+            if (empty($class)) continue;
 
             Mage::log(__METHOD__.'() trying `'.$class.'`');
             $model = Mage::getModel($class);

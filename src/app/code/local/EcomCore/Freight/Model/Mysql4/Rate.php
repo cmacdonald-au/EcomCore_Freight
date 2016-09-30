@@ -247,6 +247,15 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
         $numParcels = $request->getPackageQty();
 
         $shippingClassRules = $this->getConfigValue('shippingclasses');
+        if (!empty($shippingClassRules)) {
+            $shippingClassRules = explode("\n", $shippingClassRules);
+            foreach ($shippingClassRules as $k => $v) {
+                $bits = explode(':', $v);
+                if (isset($bits[1])) {
+                    $shippingClassRules[$bits[0]] = $bits[1];
+                }
+            }
+        }
         $cubicAttribute     = $this->getConfigValue('cubicattribute');
         $applyfactortocubic = $this->getConfigValue('applyfactortocubic');
 
@@ -317,22 +326,33 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
 
             Mage::Log(__METHOD__.'() Product #'.$productId.' `'.$product->getSku().'` has cubic weight of '.$unitCubic.' dead weight of '.$unitWeight.'. Chargeable weight is '.$chargeWeight.' and we have '.$unitCount.' of them');
 
-            if ($item->getData('free_shipping') == true) {
-                $shipClass = 'free';
-            } else {
-                $shipClass = 'standard';
-            }
+            $shipClass = false;
+            $shippingClassAttributes = array();
             if (!empty($shippingClassRules)) {
-                $shipClass = $product->getAttributeText('shipping_class');
-                Mage::log(__METHOD__.'() #'.$itemNumber.' {'.$unitCount.' X '.$chargeWeight.'} shipClass override: `'.$shipClass.'`');
-                if (empty($shipClass)) {
-                    if ($chargeWeight >= 5) {
-                        $shipClass = 'large';
-                    } else {
-                        $shipClass = 'small';
+
+                foreach ($shippingClassRules as $k => $v) {
+                    if ($v == 'shipping_class') {
+                        $shippingClassAttributes[] = $k;
+                    } else if ($item->getData($k)) {
+                        $shipClass = $v;
+                        break;
+                    }
+                }
+
+                if ($shipClass == false && !empty($shippingClassAttributes)) {
+                    foreach ($shippingClassAttributes as $classAttribute) {
+                        if ($product->getData($classAttribute)) {
+                            $shipClass = $product->getAttributeText($classAttribute);
+                            Mage::log(__METHOD__.'() #'.$itemNumber.' {'.$unitCount.' X '.$chargeWeight.'} shipClass override: `'.$shipClass.'` sourced from attrbite `'.$classAttribute.'`');
+                        }
                     }
                 }
             }
+
+            if ($shipClass === false) {
+                $shipClass = 'standard';
+            }
+
             $itemSummary[$shipClass]['weight'] += ($chargeWeight*$unitCount);
             $itemSummary[$shipClass]['units']  += $unitCount;
             $itemSummary[$shipClass]['item_data'][$product->getSku()] = array('weight' => $chargeWeight, 'units' => $unitCount);
