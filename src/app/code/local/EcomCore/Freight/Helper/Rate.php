@@ -91,4 +91,18 @@ class EcomCore_Freight_Helper_Rate extends Mage_Core_Helper_Abstract
         return $data;
     }
 
+    public function applyRetailTherapy($price)
+    {
+        $newPrice = (int)((ceil($price*2)/2)*100); //round up to the nearest $0.50 and convert to straight cents
+        $newPrice = $newPrice - 5; // take 5 cents off
+        $newPrice = $newPrice / 100; // Back to standard $ notation
+
+        if ($newPrice < $price) {
+            // If the original price was lower than the massaged price, add a dollar to it.
+            return $this->applyRetailTherapy($price+1);
+        }
+        return $newPrice;
+
+    }
+
 }

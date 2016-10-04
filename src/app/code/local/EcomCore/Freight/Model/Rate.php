@@ -61,6 +61,7 @@ class EcomCore_Freight_Model_Rate
     public function collectRates(Mage_Shipping_Model_Rate_Request $request)
     {
 
+        $helper = Mage::helper('eccfreight/rate');
         self::$rateResults = array();
         if (!$this->getConfigFlag('active')) {
             Mage::log(__METHOD__.'() Module disabled');
@@ -113,20 +114,24 @@ class EcomCore_Freight_Model_Rate
                             $rate['surcharge'] = (float)substr($rate['surcharge'], 0, -1);
                             if ($rate['surcharge'] > 0) {
                                 Mage::log(__METHOD__.'() Applying a surcharge of %'.$rate['surcharge'].' to '.$rate['price']);
-                                $shippingPrice += ($shippingPrice / 100 * $rate['surcharge']);
+                                $shippingPrice = $shippingPrice + (($shippingPrice / 100) * $rate['surcharge']);
                             }
                         } else {
                             $rate['surcharge'] = (float)$rate['surcharge'];
                             Mage::log(__METHOD__.'() Applying a surcharge of $'.$rate['surcharge'].' to '.$rate['price']);
-                            $shippingPrice += $rate['surcharge'];
+                            $shippingPrice = $shippingPrice + $rate['surcharge'];
                         }
                     }
 
-                    $method->setCost($shippingPrice);
-                    $method->setPrice($shippingPrice);
+                    $method->setCost((isset($rate['cost']) ? $rate['cost'] : $shippingPrice));
+
+                    $chargePrice = $helper->applyRetailTherapy($shippingPrice);
+                    $method->setPrice($chargePrice);
                     $method->setDeliveryType($rate['delivery_group']);
                     self::$rateResults[$methodCode] = $method;
 
+
+                    Mage::log(__METHOD__.'() Rate: '.$method->getMethodTitle.' ('.$method->getMethodChargeCode().'). Raw Price: '.$shippingPrice.'. Charge Price: '.$chargePrice.'. Cost: '.$method->getCost());
                 }
             }
         } else {
@@ -144,7 +149,7 @@ class EcomCore_Freight_Model_Rate
                     continue;
                 }
                 if ($extensionRule == 'use_extend') {
-                    // Techinically, if we're taking the first extension rate, then this should be up the top, _before_ we process any of the above. @TODO
+                    // Technically, if we're taking the first extension rate, then this should be up the top, _before_ we process any of the above. @TODO
                     Mage::log(__METHOD__.'() Taking rate '.$rate->getCode().' for $'.$rate->getData('price'));
                     self::$rateResults = array($rate->getMethod() => $rate);
                     break;
@@ -174,7 +179,6 @@ class EcomCore_Freight_Model_Rate
 
         return $result;
     }
-
 
     /* This and it's companion should be in a helper... */
     protected function tempEnableCarrier($model)
