@@ -31,7 +31,8 @@ class EcomCore_Freight_Helper_Data extends Mage_Core_Helper_Abstract
 
     const AUSTRALIA_COUNTRY_CODE = 'AU';
 
-    protected $_queryText;
+    protected $queryText;
+    public $configValues;
 
     /**
      * Gets the query text for city lookups in the postcode database.
@@ -40,22 +41,22 @@ class EcomCore_Freight_Helper_Data extends Mage_Core_Helper_Abstract
      */
     public function getQueryText()
     {
-        if (is_null($this->_queryText)) {
+        if (is_null($this->queryText)) {
             if ($this->_getRequest()->getParam('billing')) {
                 $tmp = $this->_getRequest()->getParam('billing');
-                $this->_queryText = $tmp['city'];
+                $this->queryText = $tmp['city'];
             } elseif ($this->_getRequest()->getParam('shipping')) {
                 $tmp = $this->_getRequest()->getParam('shipping');
-                $this->_queryText = $tmp['city'];
+                $this->queryText = $tmp['city'];
             } else {
-                $this->_queryText = $this->_getRequest()->getParam('city');
+                $this->queryText = $this->_getRequest()->getParam('city');
             }
-            $this->_queryText = trim($this->_queryText);
-            if (Mage::helper('core/string')->strlen($this->_queryText) > self::MAX_QUERY_LEN) {
-                $this->_queryText = Mage::helper('core/string')->substr($this->_queryText, 0, self::MAX_QUERY_LEN);
+            $this->queryText = trim($this->queryText);
+            if (Mage::helper('core/string')->strlen($this->queryText) > self::MAX_QUERY_LEN) {
+                $this->queryText = Mage::helper('core/string')->substr($this->queryText, 0, self::MAX_QUERY_LEN);
             }
         }
-        return $this->_queryText;
+        return $this->queryText;
     }
 
     /**
@@ -87,7 +88,7 @@ class EcomCore_Freight_Helper_Data extends Mage_Core_Helper_Abstract
     {
         $res  = Mage::getSingleton('core/resource');
         $conn = $res->getConnection('eccfreight_read');
-        return $conn->fetchRow('SELECT au.*, dcr.region_id FROM ' . $res->getTableName('eccfreight_postcode') . ' AS au
+        return $conn->fetchRow('SELECT au.*, dcr.* FROM ' . $res->getTableName('eccfreight_postcode') . ' AS au
              INNER JOIN ' . $res->getTableName('directory_country_region') . ' AS dcr ON au.region_code = dcr.code
              WHERE postcode = :postcode LIMIT 1', array('postcode' => $postcode));
     }
@@ -113,4 +114,18 @@ class EcomCore_Freight_Helper_Data extends Mage_Core_Helper_Abstract
             array('city' => '%' . $this->getQueryText() . '%')
         );
     }
+
+    public function getConfigValue($key)
+    {
+        if (empty($this->configValues)) {
+            $this->configValues = Mage::getStoreConfig('carriers/eccfreight', $this->websiteId);
+        }
+        if (isset($this->configValues[$key])) {
+            return $this->configValues[$key];
+        }
+
+        return false;
+    }
+
+
 }

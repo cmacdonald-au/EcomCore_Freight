@@ -38,7 +38,8 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
         $this->websiteId = $request->getWebsiteId();
         $read = $this->_getReadAdapter();
 
-        $itemSummary = $this->summariseItems();
+        $rateHelper = Mage::helper('eccfreight/rate');
+        $itemSummary = $rateHelper->summariseItems($request);
 
         $postcode = $request->getDestPostcode();
         $table    = $this->getMainTable();
@@ -238,168 +239,6 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
             }
         }
         return $newdata;
-    }
-
-    protected function summariseItems()
-    {
-        $request    = $this->rateRequest;
-        $items      = $request->getAllItems();
-        $numParcels = $request->getPackageQty();
-
-        $shippingClassRules = $this->getConfigValue('shippingclasses');
-        if (!empty($shippingClassRules)) {
-            $shippingClassRules = explode("\n", $shippingClassRules);
-            foreach ($shippingClassRules as $k => $v) {
-                $bits = explode(':', $v);
-                if (isset($bits[1])) {
-                    $shippingClassRules[$bits[0]] = $bits[1];
-                }
-            }
-        }
-        $cubicAttribute     = $this->getConfigValue('cubicattribute');
-        $applyfactortocubic = $this->getConfigValue('applyfactortocubic');
-
-        $dimensionunits = $this->getConfigValue('dimensionunits');
-        $dimxAttribute  = $this->getConfigValue('dimxattribute');
-        $dimyAttribute  = $this->getConfigValue('dimyattribute');
-        $dimzAttribute  = $this->getConfigValue('dimzattribute');
-
-        if ($dimxAttribute) {
-            $dimxAttribute = Mage::getModel('eav/entity_attribute')->load($dimxAttribute)->getAttributeCode();
-        }
-        if ($dimyAttribute) {
-            $dimyAttribute = Mage::getModel('eav/entity_attribute')->load($dimyAttribute)->getAttributeCode();
-        }
-        if ($dimzAttribute) {
-            $dimzAttribute = Mage::getModel('eav/entity_attribute')->load($dimzAttribute)->getAttributeCode();
-        }
-
-        if ($cubicAttribute) {
-            $cubicAttribute = Mage::getModel('eav/entity_attribute')->load($cubicAttribute)->getAttributeCode();
-        } else {
-            $cubicAttribute = false;
-        }
-
-        $itemSummary = array(
-            'standard' => array('units' => 0, 'weight' => 0, 'adjustments' => array()),
-        );
-
-        $itemNumber    = 0;
-        $parcelCount   = 0;
-        foreach ($items as $item) {
-
-            $parcelCount++;
-            $productId = $item->getProductId();
-            $product   = $item->getProduct();
-
-            $unitCount  = $item->getQty();
-            $unitWeight = $item->getWeight();
-            $unitCubic  = 0;
-
-            if ($cubicAttribute) {
-
-                $unitCubic  = $product->getData($cubicAttribute);
-                if ($applyfactortocubic) {
-                    $unitCubic = ($unitCubic/EcomCore_Freight_Model_Config_Dimensionunits::CUBIC_MULTIPLIER);
-                }
-
-            } else {
-
-                $unitCubic = (
-                    max(1,$product->getData($dimxAttribute))
-                    *max(1,$product->getData($dimyAttribute))
-                    *max(1,$product->getData($dimzAttribute))
-                );
-
-                if ($dimensionunits == EcomCore_Freight_Model_Config_Dimensionunits::CMS) {
-                    $unitCubic = ($unitCubic/EcomCore_Freight_Model_Config_Dimensionunits::CUBIC_CMTOM);
-                }
-
-                if ($applyfactortocubic) {
-                    $unitCubic *= EcomCore_Freight_Model_Config_Dimensionunits::CUBIC_MULTIPLIER;
-                }
-                Mage::log(__METHOD__.'() cubic measurement calculated as ('.max(1,$product->getData($dimxAttribute)).'*'.max(1,$product->getData($dimyAttribute)).'*'.max(1,$product->getData($dimzAttribute)).' '.($dimensionunits == EcomCore_Freight_Model_Config_Dimensionunits::CMS ? '/'.EcomCore_Freight_Model_Config_Dimensionunits::CUBIC_CMTOM : '').' * '.EcomCore_Freight_Model_Config_Dimensionunits::CUBIC_MULTIPLIER.')');
-            }
-
-            $unitCubic    = $unitCubic;
-            $chargeWeight = max($unitCubic, $unitWeight);
-
-            Mage::Log(__METHOD__.'() Product #'.$productId.' `'.$product->getSku().'` has cubic weight of '.$unitCubic.' dead weight of '.$unitWeight.'. Chargeable weight is '.$chargeWeight.' and we have '.$unitCount.' of them');
-
-            $shipClass = false;
-            $shippingClassAttributes = array();
-            if (!empty($shippingClassRules)) {
-
-                foreach ($shippingClassRules as $k => $v) {
-                    if ($v == 'shipping_class') {
-                        $shippingClassAttributes[] = $k;
-                    } else if ($item->getData($k)) {
-                        $shipClass = $v;
-                        break;
-                    }
-                }
-
-                if ($shipClass == false && !empty($shippingClassAttributes)) {
-                    foreach ($shippingClassAttributes as $classAttribute) {
-                        if ($product->getData($classAttribute)) {
-                            $shipClass = $product->getAttributeText($classAttribute);
-                            Mage::log(__METHOD__.'() #'.$itemNumber.' {'.$unitCount.' X '.$chargeWeight.'} shipClass override: `'.$shipClass.'` sourced from attrbite `'.$classAttribute.'`');
-                        }
-                    }
-                }
-            }
-
-            if ($shipClass === false) {
-                $shipClass = 'standard';
-            }
-
-            $itemSummary[$shipClass]['weight'] += ($chargeWeight*$unitCount);
-            $itemSummary[$shipClass]['units']  += $unitCount;
-            $itemSummary[$shipClass]['item_data'][$product->getSku()] = array('weight' => $chargeWeight, 'units' => $unitCount);
-            $itemSummary[$shipClass]['adjustments'][$product->getId()] = $this->getPromoRules($item);
-
-            Mage::log(__METHOD__.'() Added '.$unitCount.' units ('.$item->getQty().') with a combined weight of '.($chargeWeight*$unitCount).'kg');
-
-            if ($shipClass == 'free') {
-                $itemSummary[$shipClass]['charge'] = 0;
-            } else if ($shipClass == 'fixed') {
-                $itemSummary[$shipClass]['charge'] += ($product->getShippingFlatrate()*$item->getQty());
-            } else if (substr($shipClass, 0, 6) == 'capped') {
-                // basic structure is that capped groupings are set with capped<class>_value
-                // example rules;
-                //  * items with cappedhats will be grouped together.
-                //  * the value of the cap will be defined by the shiprate_capped attribute for each product.
-                //  * If the product has ship_class set to 'cappedhats' and the shiprate_capped attribute has a value of 20.
-                //  * all products with the same combination will be capped at that value.
-                $capClass = substr($shipClass, (strlen($shipClass)-7)* -1);
-                $capRate  = $product->getShiprateCapped();
-                if (false === isset($itemSummary['capped'][$capClass])) {
-                    $itemSummary['capped'][$capClass.'-'.$capRate] = array('units' => 0, 'charge' => $capRate);
-                }
-                $itemSummary['capped'][$capClass.'-'.$capRate]['units'] += $unitCount;
-            }
-            $itemNumber++;
-        }
-
-        return $itemSummary;
-
-    }
-
-    public function getPromoRules($item)
-    {
-        $rules = explode(",",$item->getAppliedRuleIds());
-        if (empty($rules)) return;
-
-        $adjustments = array();
-        foreach ($rules as $id) {
-            $rule = Mage::getModel('salesrule/rule')->load($id);
-            if ($rule->apply_to_shipping != 1) {
-                continue;
-            }
-            $adjustments[] = array('type' => $rule->getData('simple_action'), 'amount' => $rule->getData('discount_amount'));
-        }
-        return $adjustments;
-
     }
 
     public function uploadAndImport(Varien_Object $object)
@@ -675,18 +514,6 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
             $elements = array_combine($headers, $elements);
         }
         return $elements;
-    }
-
-    protected function getConfigValue($key)
-    {
-        if (empty($this->configValues)) {
-            $this->configValues = Mage::getStoreConfig('carriers/eccfreight', $this->websiteId);
-        }
-        if (isset($this->configValues[$key])) {
-            return $this->configValues[$key];
-        }
-
-        return false;
     }
 
     /**

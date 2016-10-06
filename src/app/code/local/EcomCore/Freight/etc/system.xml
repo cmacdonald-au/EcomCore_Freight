@@ -157,6 +157,7 @@
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
+                            <comment>Shipping class management - processed in order, based on attribute value (blanks are skipped). eg: shipping_class:free,standard</comment>
                         </shippingclasses>
                         <alsoprocess>
                             <label>Also process these classes</label>

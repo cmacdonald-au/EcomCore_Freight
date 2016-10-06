@@ -20,7 +20,7 @@
 <config>
     <modules>
         <EcomCore_Freight>
-            <version>0.0.4</version>
+            <version>0.0.5</version>
         </EcomCore_Freight>
     </modules>
     <global>
@@ -105,6 +105,7 @@
                 <sallowspecific>1</sallowspecific>
                 <specificcountry>AU</specificcountry>
                 <specificerrmsg>This shipping method is currently unavailable. If you would like to ship using this shipping method, please contact us.</specificerrmsg>
+                <shippingclasses>shipping_class:free,standard</shippingclasses>
             </eccfreight>
         </carriers>
         <ecomcore_freight>
