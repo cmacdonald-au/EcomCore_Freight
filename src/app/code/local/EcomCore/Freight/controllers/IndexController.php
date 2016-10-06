@@ -96,9 +96,11 @@ class EcomCore_Freight_IndexController extends Mage_Core_Controller_Front_Action
 
         $estimate = Mage::helper('eccfreight/rate')->getEstimate($productList, $listType, $destData);
 
-        Mage::log(__METHOD__.'() Processed. Got '.count($estimate->result).' options');
+        Mage::log(__METHOD__.'() Processed. Got '.count($estimate->result).' carrier');
 
         $rates = Mage::helper('eccfreight/rate')->extractRateData($estimate);
+
+        Mage::log(__METHOD__.'() Final rate count: '.count($rates));
 
         if ($render == 1) {
         	if ($output == 'js') {
