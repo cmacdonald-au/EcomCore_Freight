@@ -117,7 +117,7 @@ class EcomCore_Freight_Helper_Rate extends Mage_Core_Helper_Abstract
 
             $parcelCount++;
             $productId = $item->getProductId();
-            $product   = $item->getProduct();
+            $product   = $item->getProduct()->load($productId);
 
             $unitCount  = $item->getQty();
             $unitWeight = $item->getWeight();
@@ -127,7 +127,7 @@ class EcomCore_Freight_Helper_Rate extends Mage_Core_Helper_Abstract
 
                 $unitCubic  = $product->getData($cubicAttribute);
                 if ($applyfactortocubic) {
-                    $unitCubic = ($unitCubic/EcomCore_Freight_Model_Config_Dimensionunits::CUBIC_MULTIPLIER);
+                    $unitCubic = ($unitCubic*EcomCore_Freight_Model_Config_Dimensionunits::CUBIC_MULTIPLIER);
                 }
 
             } else {
@@ -138,14 +138,16 @@ class EcomCore_Freight_Helper_Rate extends Mage_Core_Helper_Abstract
                     *max(1,$product->getData($dimzAttribute))
                 );
 
-                if ($dimensionunits == EcomCore_Freight_Model_Config_Dimensionunits::CMS) {
+                if ($applyfactortocubic) {
+                    if ($dimensionunits == EcomCore_Freight_Model_Config_Dimensionunits::CMS) {
+                        $unitCubic = ($unitCubic/EcomCore_Freight_Model_Config_Dimensionunits::CUBIC_CMTOM);
+                    }
+
+                    $unitCubic *= EcomCore_Freight_Model_Config_Dimensionunits::CUBIC_MULTIPLIER;
+                } else if ($dimensionunits == EcomCore_Freight_Model_Config_Dimensionunits::CMS) {
                     $unitCubic = ($unitCubic/EcomCore_Freight_Model_Config_Dimensionunits::CUBIC_CMTOM);
                 }
-
-                if ($applyfactortocubic) {
-                    $unitCubic *= EcomCore_Freight_Model_Config_Dimensionunits::CUBIC_MULTIPLIER;
-                }
-                Mage::log(__METHOD__.'() cubic measurement calculated as ('.max(1,$product->getData($dimxAttribute)).'*'.max(1,$product->getData($dimyAttribute)).'*'.max(1,$product->getData($dimzAttribute)).' '.($dimensionunits == EcomCore_Freight_Model_Config_Dimensionunits::CMS ? '/'.EcomCore_Freight_Model_Config_Dimensionunits::CUBIC_CMTOM : '').' * '.EcomCore_Freight_Model_Config_Dimensionunits::CUBIC_MULTIPLIER.')');
+                Mage::log(__METHOD__.'() cubic measurement calculated as ('.max(1,$product->getData($dimxAttribute)).'*'.max(1,$product->getData($dimyAttribute)).'*'.max(1,$product->getData($dimzAttribute)).' '.($dimensionunits == EcomCore_Freight_Model_Config_Dimensionunits::CMS ? '/'.EcomCore_Freight_Model_Config_Dimensionunits::CUBIC_CMTOM : '').($applyfactortocubic ? ' * '.EcomCore_Freight_Model_Config_Dimensionunits::CUBIC_MULTIPLIER.')' : ''));
             }
 
             $unitCubic    = $unitCubic;
@@ -161,7 +163,7 @@ class EcomCore_Freight_Helper_Rate extends Mage_Core_Helper_Abstract
                 foreach ($shippingClassRules as $k => $v) {
                     if ($k == 'shipping_class') {
                         $shippingClassAttributes[] = $k;
-                    } else if ($item->getData($k)) {
+                    } else if ($product->getData($k)) {
                         $shipClass = $v;
                         break;
                     }
@@ -176,6 +178,7 @@ class EcomCore_Freight_Helper_Rate extends Mage_Core_Helper_Abstract
                             if (isset($dropdownValues[$classAttribute][$class])) {
                                 $class = $dropdownValues[$classAttribute][$class];
                             } else {
+                                Mage::log(__METHOD__.'() Value of '.$class.' is not in our list '.json_encode($dropdownValues[$classAttribute]));
                                 //skipping - not an option we care about.
                                 $class = false;
                             }
@@ -216,7 +219,7 @@ class EcomCore_Freight_Helper_Rate extends Mage_Core_Helper_Abstract
             $itemSummary[$shipClass]['item_data'][$product->getSku()] = array('weight' => $chargeWeight, 'units' => $unitCount, 'dead' => $unitWeight, 'cubic' => $unitCubic);
             $itemSummary[$shipClass]['adjustments'][$product->getId()] = $this->getPromoRules($item);
 
-            Mage::log(__METHOD__.'() Added '.$unitCount.' units ('.$item->getQty().') with a combined weight of '.($chargeWeight*$unitCount).'kg [Dead: '.$unitWeight.', Cubic: '.$unitCubic.' ea.]');
+            Mage::log(__METHOD__.'() Added '.$unitCount.' units to class '.$shipClass.' ('.$item->getQty().') with a combined weight of '.($chargeWeight*$unitCount).'kg [Dead: '.$unitWeight.', Cubic: '.$unitCubic.' ea.]');
 
             if ($shipClass == 'free') {
                 $itemSummary[$shipClass]['charge'] = 0;
