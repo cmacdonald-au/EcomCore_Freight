@@ -248,6 +248,7 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
         if (!empty($csvFile)) {
 
             $helper = Mage::helper('eccfreight/rate');
+            $dataHelper = Mage::helper('eccfreight/data');
             $requiredColumnCount = count($helper->csvFieldMap);
 
             $csv = trim(file_get_contents($csvFile));
@@ -398,8 +399,8 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
                     );
                     $connection->delete($table, $condition);
 
-                    $zoneMapping = $helper->getConfigValue('zonemapping');
-                    $zoneMappingRules = explode(',', $helper->getConfigValue('zonemappingRules'));
+                    $zoneMapping = $dataHelper->getConfigValue('zonemapping');
+                    $zoneMappingRules = explode(',', $dataHelper->getConfigValue('zonemappingRules'));
                     if ($zoneMapping && count($zoneMappingRules) == 3) {
                         $tmp = $zoneMappingRules;
                         $zoneMappingRules = array();
