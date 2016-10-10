@@ -398,8 +398,8 @@ class EcomCore_Freight_Model_Mysql4_Rate extends Mage_Core_Model_Mysql4_Abstract
                     );
                     $connection->delete($table, $condition);
 
-                    $zoneMapping = $this->getConfigValue('zonemapping');
-                    $zoneMappingRules = explode(',', $this->getConfigValue('zonemappingRules'));
+                    $zoneMapping = $rateHelper->getConfigValue('zonemapping');
+                    $zoneMappingRules = explode(',', $rateHelper->getConfigValue('zonemappingRules'));
                     if ($zoneMapping && count($zoneMappingRules) == 3) {
                         $tmp = $zoneMappingRules;
                         $zoneMappingRules = array();
