@@ -34,6 +34,11 @@ class EcomCore_Freight_IndexController extends Mage_Core_Controller_Front_Action
         $output  = $this->getRequest()->getParam('o'); // optional (string)"js" render javascript block
         $target  = $this->getRequest()->getParam('t'); // optional (string) element id for javascript output to set innerText
 
+        $overrides = $this->getRequest()->getParam('overrides');
+        if ($overrides == 'false') {
+            Mage::app()->getStore()->setConfig('carriers/eccfreight/alsoprocess', '');
+        }
+
         if ($output == 'js') {
         	$render = 1;
         	if (!empty($target)) {

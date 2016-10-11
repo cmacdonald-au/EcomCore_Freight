@@ -36,8 +36,22 @@ class EcomCore_Freight_Model_Estimate
                 Mage::log(__METHOD__.'() Loading product with identifier `'.$ident.'`');
                 $product = Mage::helper('catalog/product')->getProduct($ident, $this->getQuote()->getStoreId());
             }
+
             if ($product->hasData()) {
                 Mage::log(__METHOD__.'() Success..');
+
+                if ($product->getStatus != 1) {
+                    Mage::log(__METHOD__.'() Forcing status to 1');
+                    $product->setStatus(1);
+                }
+
+                if ($product->getStockItem()->getQty() < $qty || $product->getStockItem()->getIsInStock() == false) {
+                    Mage::log(__METHOD__.'() Forcing qty to '.$qty.' and isInStock to true');
+                    $stock_item = $product->getStockItem();
+                    $stock_item->setIsInStock(true);
+                    $stock_item->setQty($qty);
+                }
+
                 $this->products[] = array('qty' => $qty, 'product' => $product);
             } else {
                 Mage::log(__METHOD__.'() Failed');
